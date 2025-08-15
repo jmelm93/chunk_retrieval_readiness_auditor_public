@@ -1,0 +1,141 @@
+# Chunk Auditor V2 Configuration
+
+# Shared model configuration
+models:
+  default: "gpt-5-mini"  # Default model for all LLM operations
+  overrides: # Override specific models if needed. 
+    content_preprocessing: "gpt-5-nano"
+    query_answer: "gpt-5"
+    llm_rubric: "gpt-5"
+    entity_focus: "gpt-5-mini"  # Now uses OpenAI for AI-driven entity analysis
+    structure_quality: "gpt-5-mini"  # Now uses OpenAI for AI-driven structure analysis
+
+
+chunking:
+  strategy: "header-based"  # Options: header-based, sentence
+  chunk_size: 400           # Target chunk size (for sentence splitter)
+  chunk_overlap: 50         # Overlap between chunks to maintain context
+  min_chunk_size: 100
+  max_chunk_size: 512       # Hard limit to prevent oversized chunks
+  buffer_size: 1
+  breakpoint_percentile_threshold: 95
+  
+  # Header-based chunking settings
+  header_based:
+    min_section_length: 50       # Minimum characters for valid section
+    max_section_length: 10000    # Maximum before splitting section
+    max_header_depth: 4          # Process headers H1-H4
+    include_orphan_content: true # Include content before first header
+    preserve_hierarchy: true     # Maintain parent-child relationships
+    split_strategy: "paragraph"  # How to split oversized sections
+
+scoring:
+  weights:
+    query_answer: 0.25      # Query-answering completeness (reduced from 0.30)
+    entity_focus: 0.25      # Entity coherence and focus
+    llm_rubric: 0.30       # Traditional LLM evaluation (increased from 0.25)
+    structure_quality: 0.20 # HTML/semantic structure
+
+  thresholds:
+    well_optimized: 75      # Reduced from 80 for chunk-based evaluation
+    needs_work: 60
+    poorly_optimized: 0
+
+scraping:
+  timeout: 30
+  max_content_length: 500000
+  retry_attempts: 3
+  formats: ["markdown", "html"]
+  only_main_content: true  # Extract only main content when using Firecrawl
+  
+extraction:
+  extract_schema: true
+  # Entity extraction now handled during evaluation phase
+  extract_keywords: true
+  extract_title: true
+  extract_summary: true
+  max_keywords: 10
+  title_nodes: 5
+  
+content_preprocessing:
+  enabled: true
+  min_confidence: 3      # Confidence threshold (1-5)
+  analysis_length: 10000  # Characters to analyze at each end (increased for better coverage)
+  require_both: false    # Apply even if only one boundary found
+  debug_output: false    # Save debug files when boundaries are applied
+  similarity_threshold: 0.85  # Fuzzy matching threshold for header detection
+  min_content_size: 1000      # Minimum content size to process (chars)
+  min_truncated_size: 500     # Minimum size after truncation (chars)
+
+filtering:
+  enabled: true                # Enable AI-based content filtering
+  model: "gpt-5-nano"         # Small, fast model for validation
+  log_filtered: true          # Log chunks that get filtered out
+  save_filtered: false        # Save filtered chunks for review (optional)
+  # strict_filtering: false     # More aggressive filtering of mixed chunks
+  strict_filtering: true     # More aggressive filtering of mixed chunks
+  boilerplate_threshold: 0.5  # Percentage of boilerplate before filtering (0.0-1.0)
+  filter_mixed_chunks: true   # Filter chunks that mix content with footer/nav
+  min_char_length: 150        # Minimum characters for meaningful chunk
+  min_word_count: 20          # Minimum words (about 2-3 sentences)
+  min_sentence_count: 2       # At least 2 complete sentences
+  
+reporting:
+  include_metadata: true
+  include_recommendations: true
+  max_recommendations_per_chunk: 3
+  output_formats: ["json", "markdown"]
+  filter_output: false  # false = show everything, true = apply hardcoded limits
+  
+# Concurrency settings
+concurrency:
+  max_llm_calls: 10         # Max concurrent LLM API calls
+  max_extraction_calls: 20  # Max concurrent extraction operations
+  batch_size: 10            # Batch size for processing
+
+# Evaluation settings (all evaluators)
+evaluation:
+  truncation_length: 3000  # Max chars before truncating chunk text (shared by all)
+  
+  # Query-Answer evaluator settings
+  query_answer:
+    # No specific settings currently, using defaults
+    # Room for future configuration
+  
+  # LLM Rubric evaluator settings  
+  llm_rubric:
+    # No specific settings currently, using defaults
+    # Room for future configuration
+  
+  # Entity Focus evaluator settings
+  entity_focus:
+    min_salience: 0.01      # Minimum salience for evaluation focus
+    top_entities_count: 3   # Number of top entities to analyze
+  
+  # Structure Quality evaluator settings
+  structure_quality:
+    min_heading_words: 3
+    max_heading_words: 10
+    signal_weights:
+      has_adequate_heading: 0.25
+      semantic_lists: 0.15
+      no_level_jumps: 0.15
+      image_alts_ok: 0.15
+      has_intro_paragraph: 0.15
+      proper_formatting: 0.15
+
+# RAG-specific evaluation context
+rag_context:
+  chunks_per_retrieval: "3-5"    # Typical chunks retrieved together
+  expect_exhaustive: false        # Don't expect complete answers in single chunks
+  chunk_role: "focused_contribution"  # Each chunk is a focused piece
+  recognize_chunk_types:          # Different valid chunk patterns
+    - "definition"                # Chunks that define terms
+    - "example"                   # Concrete examples  
+    - "overview"                  # High-level summaries
+    - "details"                   # Deep dives on specifics
+    - "bridge"                    # Connect concepts
+    - "comparison"                # Compare/contrast items
+    - "process"                   # Step-by-step procedures
+    - "general"                   # Catchall for mixed/other content types
+  default_chunk_type: "general"   # Default when type can't be determined
