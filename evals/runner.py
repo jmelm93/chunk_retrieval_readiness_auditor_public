@@ -25,7 +25,6 @@ from .test_cases import ALL_TEST_CASES
 from .test_cases.high_quality import HIGH_QUALITY_CASES
 from .test_cases.medium_quality import MEDIUM_QUALITY_CASES
 from .test_cases.low_quality import LOW_QUALITY_CASES
-from .test_cases.extraction_artifacts import EXTRACTION_ARTIFACT_CASES
 from .evaluator import EvalComparator, EvaluationResult
 
 
@@ -133,8 +132,6 @@ class EvalRunner:
             test_cases = MEDIUM_QUALITY_CASES
         elif category == "low_quality":
             test_cases = LOW_QUALITY_CASES
-        elif category == "extraction_artifacts":
-            test_cases = EXTRACTION_ARTIFACT_CASES
         else:
             logger.error(f"Unknown category: {category}")
             return []
@@ -290,7 +287,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Run chunk auditor evaluations")
     parser.add_argument(
         "--category",
-        choices=["all", "high_quality", "medium_quality", "low_quality", "extraction_artifacts"],
+        choices=["all", "high_quality", "medium_quality", "low_quality"],
         default="all",
         help="Category of tests to run"
     )

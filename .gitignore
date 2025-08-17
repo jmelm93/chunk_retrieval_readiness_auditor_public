@@ -1,6 +1,8 @@
 archive
 output
 reports 
+blog.md
+
 # Environment variables
 .env
 .env.local
