@@ -52,12 +52,12 @@ D. List specific improvements for entity clarity and focus
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
 E. Apply scoring based on issues:
-   - Start at 80 (good baseline)
-   - Deduct: minor -10, moderate -20, severe -30 per issue
-   - Apply caps for severe issues:
-     * Any severe issue → cap at 40
-     * 2+ moderate issues → cap at 60
-   - Can earn up to +20 bonus for excellence (no issues + strong points)
+   - Start at 90 (good content baseline)
+   - Deduct: minor -8, moderate -15, severe -25 per issue
+   - Apply caps:
+     * Any severe issue → cap at 50
+     * 3+ moderate issues → cap at 65
+   - Excellence bonus: +10 if no issues (can reach 100)
    - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:

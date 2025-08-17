@@ -241,7 +241,7 @@ class BaseStructuredEvaluatorV3(BaseEvaluator, ABC):
         return processed_text, metadata
     
     def calculate_score_from_issues(self, issues: list) -> int:
-        """Calculate score based on issues found.
+        """Calculate score based on issues found. Fallback in case the AI model doesn't return a score. 
         
         Standard scoring algorithm used across evaluators.
         Can be overridden for custom scoring logic.
@@ -252,7 +252,7 @@ class BaseStructuredEvaluatorV3(BaseEvaluator, ABC):
         Returns:
             Score from 0-100
         """
-        score = 80  # Start at 80 (good baseline)
+        score = 90  # Start at 90 (good content baseline)
         
         severe_count = 0
         moderate_count = 0
@@ -261,23 +261,23 @@ class BaseStructuredEvaluatorV3(BaseEvaluator, ABC):
             severity = issue.severity if hasattr(issue, 'severity') else issue.get('severity', 'minor')
             
             if severity == "minor":
-                score -= 10
+                score -= 8
             elif severity == "moderate":
-                score -= 20
+                score -= 15
                 moderate_count += 1
             elif severity == "severe":
-                score -= 30
+                score -= 25
                 severe_count += 1
         
         # Apply caps
         if severe_count > 0:
-            score = min(score, 40)
-        elif moderate_count >= 2:
-            score = min(score, 60)
+            score = min(score, 50)
+        elif moderate_count >= 3:
+            score = min(score, 65)
         
         # Allow excellence bonus (handled by evaluator if no issues)
         if len(issues) == 0:
-            score = min(score + 20, 100)  # Can reach 100 if excellent
+            score = min(score + 10, 100)  # Can reach 100 if excellent
         
         return max(score, 10)  # Floor at 10
     
