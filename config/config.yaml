@@ -6,7 +6,9 @@ models:
   overrides: # Override specific models if needed. 
     content_preprocessing: "gpt-5-nano"
     query_answer: "gpt-5"
+    # query_answer: "gpt-5-mini"
     llm_rubric: "gpt-5"
+    # llm_rubric: "gpt-5-mini"
     entity_focus: "gpt-5-mini"  # Now uses OpenAI for AI-driven entity analysis
     structure_quality: "gpt-5-mini"  # Now uses OpenAI for AI-driven structure analysis
 

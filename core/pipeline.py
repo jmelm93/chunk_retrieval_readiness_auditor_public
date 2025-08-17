@@ -1,6 +1,7 @@
 """Main ingestion pipeline for chunk processing."""
 
 import os
+import re
 import asyncio
 from typing import List, Optional, Dict, Any
 from loguru import logger
@@ -180,6 +181,54 @@ class ChunkAuditorPipeline:
         logger.info(f"Pipeline built with {len(transformations)} transformations")
         return pipeline
     
+    def _clean_duplicate_headers(self, node):
+        """Remove redundant headers from node.text that match metadata heading.
+        
+        Fixes issue where chunk_heading metadata duplicates the first line of chunk_text,
+        causing evaluators to flag normal data structure as "problematic repetition".
+        
+        Args:
+            node: TextNode with potential header duplication
+        """
+        if not hasattr(node, 'metadata') or not node.metadata.get('heading'):
+            return
+        
+        heading = node.metadata['heading'].strip()
+        if not heading:
+            return
+            
+        text_lines = node.text.split('\n')
+        if not text_lines or not text_lines[0].strip():
+            return
+            
+        first_line = text_lines[0].strip()
+        
+        # Remove markdown markers and normalize for comparison
+        cleaned_first = re.sub(r'^#+\s*', '', first_line)
+        cleaned_first = re.sub(r'\s*\([^)]+\)$', '', cleaned_first).strip()
+        
+        # Conservative matching - only remove if substantial similarity
+        heading_lower = heading.lower()
+        cleaned_lower = cleaned_first.lower()
+        
+        # Check for exact match or substantial overlap
+        should_remove = (
+            cleaned_lower == heading_lower or
+            (len(cleaned_first) > 10 and 
+             (cleaned_lower in heading_lower or heading_lower in cleaned_lower) and
+             len(cleaned_lower) > len(heading_lower) * 0.7)  # At least 70% overlap
+        )
+        
+        if should_remove:
+            # Remove the first line and clean up whitespace
+            remaining_lines = text_lines[1:]
+            # Skip empty lines after header removal
+            while remaining_lines and not remaining_lines[0].strip():
+                remaining_lines = remaining_lines[1:]
+            
+            node.text = '\n'.join(remaining_lines).strip()
+            logger.debug(f"Removed duplicate header from chunk: '{first_line}' -> metadata heading: '{heading}'")
+    
     async def process_document(self, document: Document) -> List:
         """
         Process a document through the pipeline.
@@ -251,6 +300,9 @@ class ChunkAuditorPipeline:
                     potential_heading = lines[0].strip()
                     if len(potential_heading) < 100:  # Reasonable heading length
                         node.metadata['heading'] = potential_heading
+                
+                # Clean duplicate headers to prevent evaluator false positives
+                self._clean_duplicate_headers(node)
                 
             logger.info(f"Created {len(nodes)} chunks from document")
             return nodes

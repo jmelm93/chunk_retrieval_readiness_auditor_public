@@ -65,7 +65,19 @@ IMPORTANT CONSIDERATIONS:
 - Entity density should be appropriate for the chunk type
 - For overview chunks, some generic entities are acceptable
 - For example/detail chunks, concrete entities are critical
-- Ignore extraction artifacts: timestamps, author bylines, navigation elements
+
+EXTRACTION ARTIFACTS TO IGNORE (NOT entity focus issues):
+Real AI systems like ChatGPT Search filter these out, so DO NOT extract or penalize:
+- Author metadata: "Written by X", "By [Author Name]", author credentials, bios
+- Timestamps: "Published", "Updated on", "Last modified", publication dates
+- Social elements: "Share", "Tweet", "FacebookTwitterLinkedIn", social buttons
+- Engagement metrics: view counts, read times, "5 min read", "2.3k views"
+- Navigation elements: breadcrumbs, menu items, category tags
+- Footer content: copyright notices, privacy links, terms of service
+- CTAs: newsletter signups, "Subscribe", "Sign up", contact forms
+- UI elements: decorative images, avatars, social widgets
+
+Focus ONLY on entities within the actual content that would affect AI retrieval.
 
 SCORING GUIDELINES:
 - Consider the chunk's purpose (overview vs detail vs example)

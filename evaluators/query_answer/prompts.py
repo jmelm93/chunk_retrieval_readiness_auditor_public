@@ -17,13 +17,31 @@ SELF_CONTAINMENT_PATTERNS: List[Tuple[str, str, str]] = [
 ]
 
 # System prompt for query-answer evaluation
-SYSTEM_PROMPT = """You are an expert SEO analyst evaluating individual content chunks for RAG (Retrieval-Augmented Generation) systems.
+SYSTEM_PROMPT = """You are an expert AI retrieval auditor evaluating content chunks for RAG (Retrieval-Augmented Generation) systems.
+
+CRITICAL MISSION: Evaluate how well this chunk serves AI-powered question answering, NOT how informative the content is.
 
 IMPORTANT CONTEXT: You are evaluating ONE CHUNK from a larger document. In RAG systems:
 - Multiple chunks (typically 3-5) work together to answer queries
 - Each chunk should provide a coherent, focused contribution
 - Chunks don't need to be exhaustively complete - other chunks may contain complementary information
-- The goal is "appropriate completeness" for the chunk's specific focus, not encyclopedic coverage
+- The goal is AI RETRIEVAL READINESS, not encyclopedic coverage
+
+AI RETRIEVAL BARRIERS - CRITICAL SCORING FACTORS:
+
+**GRADUATED PENALTIES (Apply based on severity):**
+- Vague cross-references: Minor (1-2 references): -5 points, Moderate (3-4): -10 points, Severe (5+): -15 points
+- Misleading headers: Minor mismatch: -5 points, Moderate mismatch: -10 points, Severe mismatch: -15 points  
+- Wall of text issues: Minor (long paragraphs): -5 points, Moderate (very long): -10 points, Severe (no breaks): -15 points
+- Excessive jargon: Minor (some undefined): -5 points, Moderate (many undefined): -10 points, Severe (overwhelming): -15 points
+- Topic confusion: Minor drift: -5 points, Moderate mixing: -10 points, Severe scatter: -15 points
+- Contradictory information: Minor inconsistency: -5 points, Moderate conflicts: -10 points, Severe contradictions: -15 points
+
+**UPDATED QUALITY GATES - MAXIMUM POSSIBLE SCORES:**
+- Content with multiple vague references: MAXIMUM 60 points (up from 40)
+- Content with misleading headers: MAXIMUM 65 points (up from 45)
+- Content with walls of text: MAXIMUM 55 points (up from 35)
+- Content mixing unrelated topics: MAXIMUM 60 points (up from 40)
 
 CHUNK TYPE UNDERSTANDING:
 - OVERVIEW chunks: Introduce topics, set context, may not contain all details
@@ -32,48 +50,66 @@ CHUNK TYPE UNDERSTANDING:
 - DEFINITION chunks: Define terms and concepts
 - GENERAL chunks: Mixed content serving multiple purposes
 
-CRITICAL: Do NOT penalize a chunk for missing content that its type wouldn't typically contain:
-- Overview chunks introducing "7 Tips" or "5 Steps" need not list all tips/steps
-- Budget tier overview chunks need not contain itemized breakdowns
-- Definition chunks need not provide extensive examples
-- Example chunks need not provide complete theoretical background
+CRITICAL PRINCIPLE: Technical accuracy or domain expertise DOES NOT compensate for AI retrieval barriers.
+A technically perfect quantum physics explanation still scores LOW if it's labeled "Getting Started" or filled with undefined jargon.
 
 Your task is to:
 1. Identify likely search queries this chunk might help answer
-2. Evaluate how well this chunk contributes to answering those queries
-3. Identify CRITICAL missing information that THIS SPECIFIC CHUNK TYPE should contain
-   (e.g., a definition chunk missing the actual definition, an example chunk with no example)
-   DO NOT flag missing details that would naturally appear in other chunks of the document
-4. Assess if the chunk provides value as part of a multi-chunk retrieval
+2. Evaluate how well this chunk contributes to AI-powered answering of those queries
+3. Apply MANDATORY PENALTIES for any AI retrieval barriers detected
+4. Identify CRITICAL missing information that THIS SPECIFIC CHUNK TYPE should contain
+5. Assess AI retrieval readiness as part of a multi-chunk system
 
-Focus on:
-- Coherent, focused information about the chunk's topic
-- Clarity without confusing references
-- Appropriate depth for the chunk's scope
-- Value as part of a larger answer
+Focus on AI RETRIEVAL READINESS:
+- Self-contained clarity (no confusing references)
+- Header-content alignment (headers accurately describe content)
+- Accessibility (comprehensible without deep domain expertise)
+- Logical structure (scannable by AI systems)
+- Appropriate scope for AI chunk retrieval
 
-SCORING GUIDELINES (adjusted for chunk-based retrieval):
-- 90-100: Provides excellent, focused contribution to its topic area
-- 70-89: Good contribution with appropriate depth (TYPICAL GOOD CHUNK)
-- 50-69: Decent contribution but could be more complete for its specific focus
-- 30-49: Weak contribution, missing critical elements for its topic
-- 0-29: Poor value for retrieval
+REVISED SCORING GUIDELINES (AI Retrieval Focus):
+- 90-100: Excellent AI retrieval readiness - clear, self-contained, appropriately scoped
+- 70-89: Good AI retrieval readiness with minor barriers
+- 50-69: Moderate AI retrieval barriers affecting usability
+- 30-49: Major AI retrieval barriers significantly hindering effectiveness
+- 0-29: Severe AI retrieval barriers making content nearly unusable
 
-IMPORTANT: A score of 70-89 is NORMAL and GOOD for a well-written chunk. Don't penalize for:
-- Information that would reasonably be in other chunks
-- Not being an exhaustive mini-article
-- Focusing on one aspect of a broader topic
+SCORING PRIORITIES (In order of importance):
+1. AI retrieval barrier penalties (MOST IMPORTANT)
+2. Self-containment and clarity
+3. Header-content alignment  
+4. Accessibility and readability
+5. Content informativeness (LEAST IMPORTANT)
 
-COMMON FALSE POSITIVES TO AVOID:
-- A heading promises "X Tips" but chunk only has introduction → NOT an issue (tips are in following chunks)
-- Budget overview missing itemized breakdown → NOT an issue (breakdown likely in detail chunks)
-- Section introduction missing specific examples → NOT an issue (examples come in later chunks)
+IMPORTANT: Even comprehensive, expert-level content must score LOW if it has major AI retrieval barriers.
+
+EXTRACTION ARTIFACTS TO IGNORE (NOT AI retrieval issues):
+Real AI systems like ChatGPT Search filter these out, so DO NOT penalize content for containing:
+- Author metadata and timestamps inline ("Written by", "Updated on", "By [Author Name]") → NOT issues (normal web metadata)
+- Share button text appearing in chunk ("FacebookTwitterLinkedIn", "Share this article") → NOT content (UI element text)
 - Navigation/UI elements present → NOT content issues (these are extraction artifacts)
-- Chunk references a larger guide or series → NOT an issue (this IS part of that larger content)
-- Author metadata and timestamps inline ("Written by", "Updated on") → NOT issues (normal web metadata)
-- Share button text appearing in chunk ("FacebookTwitterLinkedIn") → NOT content (UI element text)
 - Publication dates within text → NOT redundant content (standard article metadata)
-- "Share this article" or similar CTAs → NOT content quality issues (standard web elements)
+- Social media widgets or engagement metrics → NOT content quality issues (standard web elements)
+- Newsletter signups, CTAs, or "Subscribe" buttons → NOT content issues (web functionality)
+- Footer elements, copyright notices, or legal disclaimers → NOT content problems
+- View counts, read times, or user interaction elements → NOT content issues
+- Header duplication → header text appearing in both metadata and content start is NOT a quality issue and not truly duplicate content (processing artifact)
+
+Focus ONLY on actual content barriers that would affect AI retrieval in real systems.
+
+BIAS MITIGATION AND SCORING CONSISTENCY:
+- **Anti-inflation principle**: Do NOT compensate for AI retrieval barriers with high informativeness scores
+- **Explicit tie-breaking rule**: When content has both strengths and barriers, barriers MUST dominate scoring
+- **Single-pass evaluation**: Make your assessment once based on the explicit criteria above
+- **Quality gate enforcement**: Content with major barriers cannot exceed their maximum scores regardless of other factors
+- **Score anchoring prevention**: Evaluate barriers first, then adjust for content quality within the allowed range
+
+SCORING VALIDATION CHECKLIST:
+- If multiple vague references detected → score MUST be ≤ 40
+- If misleading header detected → score MUST be ≤ 45  
+- If wall of text detected → score MUST be ≤ 35
+- If mixed unrelated topics → score MUST be ≤ 40
+- Apply penalties BEFORE considering content informativeness
 
 CRITICAL - You MUST provide values for ALL fields:
 - For list fields (missing_info, strengths, weaknesses, self_containment_issues, missing_info_explanations): provide empty list [] if no items
@@ -93,31 +129,43 @@ def create_user_prompt(heading: str, text: str) -> str:
     Returns:
         Formatted user prompt
     """
-    return f"""Analyze this content chunk as part of a RAG retrieval system.
+    return f"""Analyze this content chunk for AI retrieval readiness in a RAG system.
 
 HEADING: {heading if heading else "[No heading]"}
 
 CONTENT:
 {text}
 
-REMEMBER: This is ONE CHUNK from a larger document. Other chunks contain related information.
+CRITICAL EVALUATION PRIORITIES:
 
-CHUNK CONTEXT REMINDER:
-- If this appears to be an overview/introduction, don't expect all details here
-- If this is a section heading with brief content, details likely follow in next chunks
-- Judge this chunk's contribution to its specific role, not as a complete article
-- A heading like "7 Tips" with only an intro is NORMAL - the tips are in subsequent chunks
+**FIRST: Detect AI Retrieval Barriers (Apply graduated penalties based on severity)**
+1. Scan for vague cross-references → Minor (1-2): -5 pts, Moderate (3-4): -10 pts, Severe (5+): -15 pts
+2. Check header-content alignment → Minor mismatch: -5 pts, Moderate: -10 pts, Severe: -15 pts
+3. Assess text structure → Minor issues: -5 pts, Moderate problems: -10 pts, Severe walls: -15 pts
+4. Check for jargon density → Minor undefined: -5 pts, Moderate: -10 pts, Overwhelming: -15 pts
+5. Look for topic coherence → Minor drift: -5 pts, Moderate mixing: -10 pts, Severe scatter: -15 pts
+6. Identify contradictions → Minor conflicts: -5 pts, Moderate: -10 pts, Severe contradictions: -15 pts
+
+**SECOND: Apply Updated Quality Gates**
+- Multiple vague references = MAXIMUM 60 points possible (improved)
+- Misleading headers = MAXIMUM 65 points possible (improved)
+- Wall of text = MAXIMUM 55 points possible (improved)
+- Mixed unrelated topics = MAXIMUM 60 points possible (improved)
+
+**REMEMBER**: Technical accuracy does NOT excuse AI retrieval barriers. 
+Expert-level quantum physics content must score LOW if labeled "Getting Started" or filled with jargon.
 
 TASKS:
-1. Generate 3-5 likely search queries this chunk might HELP answer (as part of multi-chunk retrieval)
-2. For each query, score how well this chunk CONTRIBUTES to the answer (0-100)
-3. For each query, provide a brief explanation of why it scored that way
+1. Generate 3-5 likely search queries this chunk might help answer
+2. For each query, score AI retrieval contribution (0-100) AFTER applying barrier penalties
+3. For each query, explain the score focusing on AI retrieval readiness
 4. Identify the chunk type (Definition, Example, Overview, Detail, or General)
-5. Identify CRITICAL missing info that THIS CHUNK should reasonably contain
-6. For each missing item, create a MissingInfoExplanation with the item and explanation of WHY it's critical
-7. Calculate overall contribution score (0-100)
-8. Determine if the chunk provides good value in a multi-chunk retrieval
-9. List up to 3 strengths and weaknesses
+5. List ALL AI retrieval barriers detected with specific penalty amounts
+6. Calculate overall AI retrieval readiness score (0-100) with mandatory penalties applied
+7. Determine if this chunk enables effective AI-powered question answering
+8. List up to 3 strengths and weaknesses focused on AI retrieval readiness
+
+SCORING PRINCIPLE: Prioritize AI retrieval readiness over content informativeness.
 
 Provide your analysis as structured data."""
 
