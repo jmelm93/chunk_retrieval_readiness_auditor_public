@@ -5,12 +5,14 @@ models:
   default: "gpt-5-mini"  # Default model for all LLM operations
   overrides: # Override specific models if needed. 
     content_preprocessing: "gpt-5-nano"
-    # query_answer: "gpt-5"
-    query_answer: "gpt-5-mini"
-    # llm_rubric: "gpt-5"
-    llm_rubric: "gpt-5-mini"
-    entity_focus: "gpt-5-mini"  # Now uses OpenAI for AI-driven entity analysis
-    structure_quality: "gpt-5-mini"  # Now uses OpenAI for AI-driven structure analysis
+    # query_answer: "gpt-5-mini"
+    # llm_rubric: "gpt-5-mini"
+    # entity_focus: "gpt-5-mini"  
+    # structure_quality: "gpt-5-mini" 
+    query_answer: "gpt-5"
+    llm_rubric: "gpt-5"
+    entity_focus: "gpt-5"  
+    structure_quality: "gpt-5" 
 
 
 chunking:
@@ -105,6 +107,13 @@ concurrency:
 # Evaluation settings (all evaluators)
 evaluation:
   truncation_length: 3000  # Max chars before truncating chunk text (shared by all)
+  
+  # V2 Enhancement: Per-evaluator passing thresholds
+  thresholds:
+    query_answer: 75
+    llm_rubric: 70
+    entity_focus: 70
+    structure_quality: 70
   
   # Query-Answer evaluator settings
   query_answer:

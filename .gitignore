@@ -1,6 +1,9 @@
 archive
 output
+repodoc*
 blog.md
+chunk_evaluators_v2.md
+notes.md
 
 # Environment variables
 .env

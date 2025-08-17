@@ -115,39 +115,38 @@ def create_user_prompt(heading: str, text: str) -> str:
 HEADING: {heading if heading else "[No heading]"}
 
 CONTENT:
-{text}
+{text}"""
 
-CRITICAL EVALUATION PRIORITIES:
+# CRITICAL EVALUATION PRIORITIES:
 
-**FIRST: Detect AI Retrieval Barriers (Apply graduated penalties based on severity)**
-1. Scan for vague cross-references → Minor (1-2): -5 pts, Moderate (3-4): -10 pts, Severe (5+): -15 pts
-2. Check header-content alignment → Minor mismatch: -5 pts, Moderate: -10 pts, Severe: -15 pts
-3. Assess text structure → Minor issues: -5 pts, Moderate problems: -10 pts, Severe walls: -15 pts
-4. Check for jargon density → Minor undefined: -5 pts, Moderate: -10 pts, Overwhelming: -15 pts
-5. Look for topic coherence → Minor drift: -5 pts, Moderate mixing: -10 pts, Severe scatter: -15 pts
-6. Identify contradictions → Minor conflicts: -5 pts, Moderate: -10 pts, Severe contradictions: -15 pts
+# **FIRST: Detect AI Retrieval Barriers (Apply graduated penalties based on severity)**
+# 1. Scan for vague cross-references → Minor (1-2): -5 pts, Moderate (3-4): -10 pts, Severe (5+): -15 pts
+# 2. Check header-content alignment → Minor mismatch: -5 pts, Moderate: -10 pts, Severe: -15 pts
+# 3. Assess text structure → Minor issues: -5 pts, Moderate problems: -10 pts, Severe walls: -15 pts
+# 4. Check for jargon density → Minor undefined: -5 pts, Moderate: -10 pts, Overwhelming: -15 pts
+# 5. Look for topic coherence → Minor drift: -5 pts, Moderate mixing: -10 pts, Severe scatter: -15 pts
+# 6. Identify contradictions → Minor conflicts: -5 pts, Moderate: -10 pts, Severe contradictions: -15 pts
 
-**SECOND: Apply Updated Quality Gates**
-- Multiple vague references = MAXIMUM 60 points possible (improved)
-- Misleading headers = MAXIMUM 65 points possible (improved)
-- Wall of text = MAXIMUM 55 points possible (improved)
-- Mixed unrelated topics = MAXIMUM 60 points possible (improved)
+# **SECOND: Apply Updated Quality Gates**
+# - Multiple vague references = MAXIMUM 60 points possible (improved)
+# - Misleading headers = MAXIMUM 65 points possible (improved)
+# - Wall of text = MAXIMUM 55 points possible (improved)
+# - Mixed unrelated topics = MAXIMUM 60 points possible (improved)
 
-**REMEMBER**: Technical accuracy does NOT excuse AI retrieval barriers. 
-Expert-level quantum physics content must score LOW if labeled "Getting Started" or filled with jargon.
+# **REMEMBER**: Technical accuracy does NOT excuse AI retrieval barriers. 
+# Expert-level quantum physics content must score LOW if labeled "Getting Started" or filled with jargon.
 
-TASKS:
-1. Generate 3-5 likely search queries this chunk might help answer
-2. For each query, score AI retrieval contribution (0-100) AFTER applying barrier penalties
-3. Calculate overall AI retrieval readiness score (0-100) with mandatory penalties applied
-4. Provide clear assessment explaining AI retrieval readiness for this chunk
-5. List key strengths for AI retrieval (determine appropriate number based on chunk quality)
-6. List key issues affecting AI retrieval (determine appropriate number based on problems found)
-7. Provide list of specific recommendations if score < 80, or ["N/A - This section is already well-optimized"] if score ≥ 80
+# TASKS:
+# 1. Generate 3-5 likely search queries this chunk might help answer
+# 2. For each query, score AI retrieval contribution (0-100) AFTER applying barrier penalties
+# 3. Calculate overall AI retrieval readiness score (0-100) with mandatory penalties applied
+# 4. Provide clear assessment explaining AI retrieval readiness for this chunk
+# 5. List key strengths for AI retrieval (determine appropriate number based on chunk quality)
+# 6. List key issues affecting AI retrieval (determine appropriate number based on problems found)
+# 7. Provide list of specific recommendations if score < 80, or ["N/A - This section is already well-optimized"] if score ≥ 80
 
-SCORING PRINCIPLE: Prioritize AI retrieval readiness over content informativeness.
+# SCORING PRINCIPLE: Prioritize AI retrieval readiness over content informativeness.
 
-Provide your analysis as structured data according to the provided schema."""
-
+# Provide your analysis as structured data according to the provided schema.
 
 # 5. Include query breakdown in score_breakdown section with individual query scores and explanations

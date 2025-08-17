@@ -65,6 +65,7 @@ class QueryAnswerEvaluator(BaseStructuredEvaluator):
         
         # Truncate if too long
         chunk_text = self.truncate_content(chunk_text, self.truncation_length)
+
         
         # Create messages for API call
         messages = [
@@ -77,7 +78,7 @@ class QueryAnswerEvaluator(BaseStructuredEvaluator):
             response_model=StandardizedEvaluationResult,
             messages=messages
         )
-        
+
         if not result:
             return self.create_empty_result("Failed to get evaluation from OpenAI")
         

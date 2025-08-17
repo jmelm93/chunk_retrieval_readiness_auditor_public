@@ -2,31 +2,20 @@
 
 import os
 import re
-import asyncio
 from typing import List, Optional, Dict, Any
 from loguru import logger
 
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.core.node_parser import (
-    SemanticSplitterNodeParser,
-    SentenceSplitter
-)
-from llama_index.core.extractors import (
-    TitleExtractor,
-    KeywordExtractor,
-    SummaryExtractor
-)
+from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.extractors import TitleExtractor, KeywordExtractor
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.core import Document
 
 # Import our custom extractors
-# EntityMetadataExtractor removed - entity extraction now handled during evaluation
 from utils.content_validator import ContentValidator
 from config import Config
 from .header_chunker import HeaderBasedChunker
 from .filtering_parser import FilteringNodeParser
-
-# Note: Embedding models removed - using header-based chunking strategy
 
 class ChunkAuditorPipeline:
     """Main pipeline for document processing and chunk creation."""
@@ -143,25 +132,6 @@ class ChunkAuditorPipeline:
                     logger.info("Keyword extractor added")
                 except Exception as e:
                     logger.error(f"Failed to add keyword extractor: {e}")
-        
-        # Summary extractor - temporarily disabled due to TextNode compatibility issue
-        # if self.config.extraction.extract_summary:
-        #     openai_key = os.getenv("OPENAI_API_KEY")
-        #     if openai_key:
-        #         try:
-        #             from llama_index.llms.openai import OpenAI as OpenAILLM
-        #             llm = OpenAILLM(
-        #                 model=self.config.models.default,
-        #                 api_key=openai_key
-        #             )
-        #             summary_extractor = SummaryExtractor(
-        #                 summaries=["self"],
-        #                 llm=llm
-        #             )
-        #             extractors.append(summary_extractor)
-        #             logger.info("Summary extractor added")
-        #         except Exception as e:
-        #             logger.error(f"Failed to add summary extractor: {e}")
         
         return extractors
     

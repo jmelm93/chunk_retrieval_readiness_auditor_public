@@ -121,62 +121,9 @@ Evaluate the following chunk for AI retrieval readiness. Target token window: {t
 {heading if heading else "[No heading]"}
 
 # Chunk
-{text}
-
-# Critical AI Retrieval Assessment
-
-**FIRST: Detect AI Accessibility Barriers**
-1. Scan for vague references ("as mentioned above", "this method") that break self-containment
-2. Check for walls of text without proper paragraph breaks or structure
-3. Assess jargon density - are technical terms defined or accessible?
-4. Look for topic confusion or stream of consciousness writing
-5. Verify header accurately describes the content level and topic
-
-**SECOND: Apply Accessibility-First Scoring**
-- standalone: Penalize heavily for vague references, reward self-containment
-- one_idea: Penalize topic mixing, reward clear focus accessible to AI systems
-- structure: Penalize walls of text, reward scannable organization 
-- right_size: Judge appropriateness for AI chunk retrieval scope
-
-**REMEMBER**: Technical expertise does NOT excuse accessibility barriers.
-Expert quantum physics content must score LOW if it has jargon barriers or vague references.
-
-# Tasks
-1. Calculate overall AI retrieval readiness score (0-100) prioritizing accessibility over informativeness
-2. Provide clear assessment explaining the chunk's AI accessibility and quality
-3. List key strengths for AI retrieval (determine appropriate number based on chunk quality)
-4. List key issues affecting AI accessibility (determine appropriate number based on problems found)
-5. Provide list of specific recommendations if score < 80, or ["N/A - This section is already well-optimized"] if score ≥ 80
-
-CHUNK CONTEXT:
-- If heading promises "X Tips" but only introduces them, that's NORMAL for an overview chunk
-- Budget tier chunks don't need full breakdowns if they're tier overviews
-- Judge based on AI accessibility for the chunk's role, not as a standalone article
-
-Remember: Focus on AI retrieval barriers in actual content, ignore extraction artifacts like author bylines and social buttons.
-
-Provide your analysis as structured data according to the provided schema."""
-
-# 3. Score the 4 rubric dimensions in score_breakdown section:
-#    - Standalone Clarity: How well it reads without context
-#    - Topic Focus: Consistency and coherence of subject matter  
-#    - Structure Quality: Organization and flow
-#    - Content Size: Appropriateness for chunk retrieval
+{text}"""
 
 
-#   "score_breakdown": {
-#     "Standalone Clarity": {"score": 88, "explanation": "Clear self-contained explanation with proper context"},
-#     "Topic Focus": {"score": 92, "explanation": "Focused exclusively on canonical tags without topic drift"},
-#     "Structure Quality": {"score": 85, "explanation": "Good logical flow, could benefit from better formatting"},
-#     "Content Size": {"score": 90, "explanation": "Appropriate scope and length for the topic"}
-#   },
-
-#   "score_breakdown": {
-#     "Standalone Clarity": {"score": 25, "explanation": "Severe vague reference issues break self-containment"},
-#     "Topic Focus": {"score": 30, "explanation": "Mixes unrelated topics (project management and quantum physics)"},
-#     "Structure Quality": {"score": 35, "explanation": "Poor organization with run-on sentences"},
-#     "Content Size": {"score": 40, "explanation": "Appropriate length but wrong scope for 'Getting Started'"}
-#   },
 
 def get_few_shot_examples(target_min: int, target_max: int) -> List[Dict[str, str]]:
     """Get few-shot examples for consistent evaluation.

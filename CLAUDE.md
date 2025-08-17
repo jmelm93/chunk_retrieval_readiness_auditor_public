@@ -147,7 +147,7 @@ python -m evals.runner --verbose          # Detailed output
 
 ### Modify Prompts
 
-**IMPORTANT**: Before modifying any prompts, review [GPT-5 Prompt Engineering Best Practices](CLAUDE_EVALUATORS_PROMPT_ENGINEERING.md) for current standards on structured outputs and prompt design.
+**IMPORTANT**: Before modifying any prompts, review [GPT-5 Prompt Engineering Best Practices](docs/CLAUDE_EVALUATORS_PROMPT_ENGINEERING.md) for current standards on structured outputs and prompt design.
 
 1. Edit relevant `evaluators/*/prompts.py`
 2. Follow structured outputs best practices (see documentation above)

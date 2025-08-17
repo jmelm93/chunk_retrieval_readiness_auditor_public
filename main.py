@@ -19,7 +19,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import load_config
 from core.document_loader import EnhancedDocumentLoader
 from core.pipeline import ChunkAuditorPipeline
-from evaluators.composite import CompositeEvaluator
+from evaluators_v2.composite.evaluator import CompositeEvaluatorV2
 from reporting.report_generator import EnhancedReportGenerator
 
 # Load environment variables
@@ -61,9 +61,9 @@ async def analyze_content(content: str, format: str = "html", config=None):
     logger.info("Processing through pipeline...")
     nodes = await pipeline.process_document(document)
     
-    # Comprehensive evaluation with CompositeEvaluator
-    logger.info("Evaluating chunks with composite evaluator...")
-    evaluator = CompositeEvaluator(config)
+    # Comprehensive evaluation with CompositeEvaluatorV2
+    logger.info("Evaluating chunks with V2 composite evaluator...")
+    evaluator = CompositeEvaluatorV2(config)
     
     # Evaluate all nodes
     evaluation_results = await evaluator.evaluate_nodes(nodes)
@@ -104,9 +104,9 @@ async def analyze_url(url: str, config=None):
     logger.info("Processing through pipeline...")
     nodes = await pipeline.process_document(document)
     
-    # Comprehensive evaluation with CompositeEvaluator
-    logger.info("Evaluating chunks with composite evaluator...")
-    evaluator = CompositeEvaluator(config)
+    # Comprehensive evaluation with CompositeEvaluatorV2
+    logger.info("Evaluating chunks with V2 composite evaluator...")
+    evaluator = CompositeEvaluatorV2(config)
     
     # Evaluate all nodes
     evaluation_results = await evaluator.evaluate_nodes(nodes)
@@ -140,32 +140,37 @@ def save_results(results: dict, output_dir: str = "output", config=None):
         config = load_config()
     
     # Use EnhancedReportGenerator for comprehensive reports
-    from evaluators.composite import ChunkEvaluationResult
+    from evaluators_v2.composite.models import CompositeEvaluationResultV2
     
-    # Convert results to ChunkEvaluationResult objects if needed
+    # Convert results to CompositeEvaluationResultV2 objects if needed
     if 'chunks' in results and results['chunks']:
-        # Check if already ChunkEvaluationResult format
+        # Check if already in proper format
         first_chunk = results['chunks'][0]
         if not isinstance(first_chunk, dict) or 'total_score' not in first_chunk:
             # Legacy format - use simplified save
             _save_legacy_results(results, output_dir)
             return
         
-        # Convert dict results to ChunkEvaluationResult objects
+        # Convert dict results to CompositeEvaluationResultV2 objects
         chunk_results = []
         for chunk_dict in results['chunks']:
-            chunk_results.append(ChunkEvaluationResult(
+            chunk_results.append(CompositeEvaluationResultV2(
                 chunk_id=chunk_dict.get('chunk_id', ''),
                 chunk_index=chunk_dict.get('chunk_index', 0),
                 heading=chunk_dict.get('heading', ''),
                 text_preview=chunk_dict.get('text_preview', ''),
                 token_count=chunk_dict.get('token_count', 0),
+                feedback_markdown=chunk_dict.get('feedback_markdown', chunk_dict.get('feedback', {})),
+                feedback_json=chunk_dict.get('feedback_json', {}),
                 scores=chunk_dict.get('scores', {}),
+                normalized_weights=chunk_dict.get('normalized_weights', {}),
                 total_score=chunk_dict.get('total_score', 0),
                 label=chunk_dict.get('label', ''),
                 passing=chunk_dict.get('passing', False),
-                feedback=chunk_dict.get('feedback', {}),
-                entities=chunk_dict.get('entities', [])
+                entities=chunk_dict.get('entities', []),
+                metadata=chunk_dict.get('metadata', {}),
+                evaluation_metadata=chunk_dict.get('evaluation_metadata', {}),
+                processing_summary=chunk_dict.get('processing_summary', {})
             ))
         
         # Generate comprehensive reports

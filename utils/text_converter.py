@@ -209,3 +209,132 @@ def extract_headers_from_content(content: str) -> list:
                     })
     
     return headers
+
+
+def truncate_content(text: str, max_length: int = 3000) -> str:
+    """Truncate content intelligently, avoiding cutting inside code fences.
+    
+    This improved version:
+    1. Avoids cutting inside code fences (```)
+    2. Prefers sentence/paragraph boundaries
+    3. Uses sentence boundaries over arbitrary cuts
+    
+    Args:
+        text: Text to potentially truncate
+        max_length: Maximum length in characters
+        
+    Returns:
+        Truncated text with "(...truncated)" marker if truncated
+    """
+    if len(text) <= max_length:
+        return text
+    
+    # Initial cut at max_length
+    cut = text[:max_length]
+    
+    # Check if we're cutting inside code fences
+    if cut.count("```") % 2 == 1:
+        # We're inside a code fence, find the last complete fence
+        back = cut.rfind("```")
+        if back > 0:
+            cut = cut[:back]
+    
+    # Try to find a good boundary (sentence or paragraph end)
+    # Look for sentence endings first
+    last_period = cut.rfind(".")
+    last_newline = cut.rfind("\n")
+    
+    # Use the best boundary if it's not too far back (within 30% of max_length)
+    best_boundary = max(last_period, last_newline)
+    if best_boundary > max_length * 0.7:
+        cut = cut[:best_boundary + 1]
+    
+    return cut.strip() + " (...truncated)"
+
+
+def estimate_token_count(text: str, chars_per_token: float = 4.0) -> int:
+    """Estimate token count using character-based heuristic.
+    
+    This provides a rough estimate without requiring a tokenizer.
+    GPT models average ~4 characters per token for English text.
+    
+    Args:
+        text: Text to estimate tokens for
+        chars_per_token: Average characters per token (default 4.0 for GPT models)
+        
+    Returns:
+        Estimated token count
+    """
+    if not text:
+        return 0
+    
+    return max(1, int(len(text) / chars_per_token))
+
+
+def get_text_metadata(text: str) -> dict:
+    """Extract useful metadata from text for evaluation context.
+    
+    Args:
+        text: Text to analyze
+        
+    Returns:
+        Dictionary with text metadata
+    """
+    if not text:
+        return {
+            "char_count": 0,
+            "word_count": 0,
+            "line_count": 0,
+            "token_count_estimate": 0,
+            "has_code_blocks": False,
+            "code_block_count": 0
+        }
+    
+    # Basic counts
+    char_count = len(text)
+    word_count = len(text.split())
+    line_count = text.count('\n') + 1
+    
+    # Code block detection
+    code_block_count = text.count('```')
+    has_code_blocks = code_block_count > 0
+    
+    return {
+        "char_count": char_count,
+        "word_count": word_count,
+        "line_count": line_count,
+        "token_count_estimate": estimate_token_count(text),
+        "has_code_blocks": has_code_blocks,
+        "code_block_count": code_block_count // 2  # Pairs of opening/closing
+    }
+
+
+def load_ignore_artifacts() -> str:
+    """Load the shared ignore artifacts text for embedding in prompts.
+    
+    Returns:
+        The ignore artifacts text to embed in system prompts
+    """
+    try:
+        import os
+        # Look for the artifacts file in evaluators_v2/shared directory
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        artifacts_path = os.path.join(current_dir, "evaluators_v2", "shared", "ignore_web_artifacts.md")
+        
+        if os.path.exists(artifacts_path):
+            with open(artifacts_path, 'r', encoding='utf-8') as f:
+                return f.read().strip()
+    except Exception as e:
+        logger.debug(f"Could not load ignore_web_artifacts.md: {e}")
+    
+    # Fallback to hardcoded version
+    return """Ignore these extraction artifacts (do not penalize or extract):
+- Author bylines, bios, avatars (e.g., "Written by…")
+- Timestamps/dates ("Published", "Updated on", "Last modified")
+- Share button text ("FacebookTwitterLinkedIn", "Share this article"), social widgets
+- Engagement metrics (view counts, read time, likes)
+- Navigation (menus, breadcrumbs, category tags, "Skip to content")
+- Footer content (copyright, privacy/terms)
+- CTAs (newsletter signups, subscribe forms, contact forms)
+- Related content ("You may also like", recommended posts)
+- Decorative media (hero images, author photos)"""

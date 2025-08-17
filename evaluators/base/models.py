@@ -48,22 +48,6 @@ class MarkdownFormattable(ABC):
         return {}
 
 
-
-
-# class ScoreBreakdownItem(BaseModel):
-#     """Individual score breakdown item."""
-    
-#     model_config = ConfigDict(extra='forbid')
-    
-#     score: int = Field(
-#         ge=0, le=100,
-#         description="Score for this dimension (0-100)"
-#     )
-#     explanation: str = Field(
-#         description="Brief explanation of this score"
-#     )
-
-
 class StandardizedEvaluationResult(BaseModel, MarkdownFormattable):
     """Standardized evaluation result format for all evaluators."""
     
@@ -81,11 +65,7 @@ class StandardizedEvaluationResult(BaseModel, MarkdownFormattable):
     overall_assessment: str = Field(
         description="Clear and concise assessment."
     )
-    
-    # score_breakdown: Optional[Dict[str, ScoreBreakdownItem]] = Field(
-    #     default=None,
-    #     description="Optional breakdown of sub-scores with explanations"
-    # )
+
     
     strengths: List[str] = Field(
         description="Key strengths - AI determines appropriate number"
@@ -119,17 +99,6 @@ class StandardizedEvaluationResult(BaseModel, MarkdownFormattable):
         lines.append("")
         lines.append(f"⭐ **Score:** {self.overall_score}/100")
         lines.append("")
-        
-        # # Breakdown (if available)
-        # if self.score_breakdown:
-        #     lines.append("**Breakdown:**")
-        #     for dimension, breakdown in self.score_breakdown.items():
-        #         lines.append(f"• {dimension}: {breakdown.score}/100 - {breakdown.explanation}")
-        #     lines.append("")
-        
-        # # Score Reasoning
-        # lines.append("**Score Reasoning:**")
-        # lines.append("")
         
         # Overall Assessment
         lines.append("📋 **Overall Assessment:**")
