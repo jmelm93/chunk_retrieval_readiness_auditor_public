@@ -74,6 +74,18 @@ async def analyze_content(content: str, format: str = "html", config=None):
         'summary': evaluator.generate_summary(evaluation_results)
     }
     
+    # Add metadata for content analysis
+    export_data['metadata'] = {
+        'source_type': 'direct_content',
+        'format': format,
+        'analyzed_at': datetime.now().isoformat(),
+        'chunk_count': len(evaluation_results),
+        'config': {
+            'chunking_strategy': config.chunking.strategy,
+            'chunk_size': config.chunking.chunk_size
+        }
+    }
+    
     return export_data
 
 async def analyze_url(url: str, config=None):
@@ -145,23 +157,18 @@ def save_results(results: dict, output_dir: str = "output", config=None):
     if not config:
         config = load_config()
     
-    # Simplified save for V3 results
+    # Use EnhancedReportGenerator for comprehensive reports
     if 'chunks' in results and results['chunks']:
-        os.makedirs(output_dir, exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        reporter = EnhancedReportGenerator(config)
         
-        # Save JSON results
-        json_file = os.path.join(output_dir, f"analysis_{timestamp}.json")
-        with open(json_file, 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        logger.info(f"Results saved to {json_file}")
+        # Generate all report formats (JSON, Markdown, Summary)
+        files = reporter.generate_report(
+            results['chunks'],  # Pass the chunk results
+            output_dir,
+            results.get('metadata')  # Pass metadata if available
+        )
         
-        # Save markdown summary
-        if 'summary' in results:
-            md_file = os.path.join(output_dir, f"summary_{timestamp}.md")
-            with open(md_file, 'w', encoding='utf-8') as f:
-                f.write(results['summary'])
-            logger.info(f"Summary saved to {md_file}")
+        logger.info(f"Reports generated: {', '.join(files.values())}")
     else:
         _save_legacy_results(results, output_dir)
 

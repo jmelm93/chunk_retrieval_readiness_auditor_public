@@ -309,18 +309,24 @@ class EnhancedReportGenerator:
         filter_output = (self.config and 
                        hasattr(self.config, 'reporting') and 
                        self.config.reporting.filter_output)
-        chunks_to_show = sorted(results, key=lambda x: x.total_score)[:3] if filter_output else sorted(results, key=lambda x: x.total_score)
+        # V3: Use dictionary access for sorting
+        chunks_to_show = sorted(results, key=lambda x: x.get('composite_score', x.get('total_score', 0)))[:3] if filter_output else sorted(results, key=lambda x: x.get('composite_score', x.get('total_score', 0)))
         if chunks_to_show:
             lines.append("CHUNKS NEEDING MOST ATTENTION")
             lines.append("-" * 30)
             for chunk in chunks_to_show:
-                lines.append(f"- Chunk {chunk.chunk_index + 1}: {chunk.heading or '[No Heading]'} ({chunk.total_score:.1f}/100)")
-                # Extract first recommendation from LLM feedback if available
-                if 'llm_rubric' in chunk.feedback:
+                # V3: Access as dictionary
+                chunk_index = chunk.get('chunk_metadata', {}).get('chunk_index', 0)
+                heading = chunk.get('chunk_metadata', {}).get('heading', '')
+                score = chunk.get('composite_score', chunk.get('total_score', 0))
+                lines.append(f"- Chunk {chunk_index + 1}: {heading or '[No Heading]'} ({score:.1f}/100)")
+                # Extract first recommendation from feedback if available
+                individual = chunk.get('individual_results', {})
+                if 'llm_rubric' in individual:
                     try:
                         import json
                         # Try to extract recommendations from the feedback
-                        feedback_text = chunk.feedback['llm_rubric']
+                        feedback_text = individual['llm_rubric'].get('feedback', '')
                         if '**Key Recommendations:**' in feedback_text:
                             rec_section = feedback_text.split('**Key Recommendations:**')[1]
                             # Get first recommendation (starts with "1. ")

@@ -99,7 +99,7 @@ class EvalComparator:
             if evaluator_name == "overall":
                 continue
                 
-            actual_score = actual_results.get("scores", {}).get(evaluator_name, 0) * 100
+            actual_score = actual_results.get("scores", {}).get(evaluator_name, 0)
             comparison = self.compare_score(actual_score, expected, evaluator_name)
             evaluator_scores[evaluator_name] = comparison
             

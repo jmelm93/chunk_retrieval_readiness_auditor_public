@@ -153,6 +153,8 @@ class CompositeEvaluatorV3:
             "evaluation_time_seconds": round(eval_time, 2),
             "chunk_metadata": {
                 "heading": chunk_metadata.get("heading", ""),
+                "text_preview": chunk_text,  # Store the actual chunk text for reports
+                "chunk_index": chunk_metadata.get("chunk_index", 0),  # Include chunk index
                 "char_count": len(chunk_text),
                 "word_count": len(chunk_text.split())
             }
@@ -168,6 +170,13 @@ class CompositeEvaluatorV3:
             List of evaluation results
         """
         logger.info(f"Evaluating {len(nodes)} nodes with V3 composite evaluator")
+        
+        # Ensure chunk indices are set
+        for i, node in enumerate(nodes):
+            if node.metadata is None:
+                node.metadata = {}
+            if 'chunk_index' not in node.metadata:
+                node.metadata['chunk_index'] = i
         
         # Evaluate all nodes
         tasks = [self.evaluate_node(node) for node in nodes]
