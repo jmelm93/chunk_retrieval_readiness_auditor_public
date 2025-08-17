@@ -1,7 +1,6 @@
 archive
 output
-test_*
-
+reports 
 # Environment variables
 .env
 .env.local

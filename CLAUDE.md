@@ -3,8 +3,9 @@
 ## Project Overview
 
 **Purpose**: Evaluate web content for AI retrieval readiness across 4 dimensions:
+
 - Query-Answer completeness
-- Entity focus & coherence  
+- Entity focus & coherence
 - LLM rubric quality
 - Structure quality
 
@@ -63,6 +64,7 @@ python main.py --debug --url "..."          # Verbose logging
 ## Core Principles
 
 **IMPORTANT**: This tool evaluates chunks for multi-chunk RAG retrieval:
+
 - 3-5 chunks typically retrieved together
 - Each chunk = focused contribution, not exhaustive
 - "Standalone" = understandable, not complete
@@ -71,12 +73,14 @@ python main.py --debug --url "..."          # Verbose logging
 ## Development Guidelines
 
 ### Code Conventions
+
 - **Imports**: Group stdlib → third-party → local. NEVER use `from module import *`
 - **Async**: All evaluators use `async def aevaluate()`. Use `asyncio.gather()` for concurrency
 - **Errors**: Degrade gracefully. Log with `logger.error()`, return default scores on failure
 - **Models**: `@dataclass` for simple, Pydantic for OpenAI outputs
 
 ### Prompts Organization
+
 - **ALWAYS** keep prompts in dedicated `prompts.py` files
 - Each evaluator directory has its own prompts module
 - System prompts, user templates, and few-shot examples separated
@@ -85,18 +89,22 @@ python main.py --debug --url "..."          # Verbose logging
 ## Key Components
 
 ### Configuration (`config/config.yaml`)
+
 **IMPORTANT**: ALL values must be configurable - no hardcoding!
+
 - Model settings: `models.default` and `models.overrides`
 - Scoring weights: `scoring.weights` (must sum to 1.0)
 - Content preprocessing: boundary detection, filtering
 
 ### Evaluators (`evaluators/*/`)
+
 - Each has `evaluator.py` (logic) and `prompts.py` (AI prompts)
 - All use structured Pydantic outputs
 - Concurrent execution via composite evaluator
 - MUST handle extraction artifacts (author bylines, timestamps, social buttons)
 
 ### Evaluation Tests (`evals/`)
+
 - 20 hardcoded test cases across 4 categories
 - Validates evaluator behavior with tolerance ranges
 - Run with: `python -m evals.runner`
@@ -104,13 +112,14 @@ python main.py --debug --url "..."          # Verbose logging
 ## Configuration
 
 ### Required Environment Variables
+
 ```bash
 OPENAI_API_KEY=sk-...
 FIRECRAWL_API_KEY=fc-...
-VOYAGE_API_KEY=pa-...  # Optional
 ```
 
 ### Adding Config Values
+
 1. Add to `config/config.yaml`
 2. Update dataclass in `config_handler.py`
 3. Access: `config.section.property`
@@ -120,6 +129,7 @@ VOYAGE_API_KEY=pa-...  # Optional
 ## Common Tasks
 
 ### Add New Evaluator
+
 1. Create directory in `evaluators/your_evaluator/`
 2. Add `evaluator.py` (inherit from `BaseStructuredEvaluator`)
 3. Add `prompts.py` with system/user prompts
@@ -128,6 +138,7 @@ VOYAGE_API_KEY=pa-...  # Optional
 6. Add test cases in `evals/test_cases/`
 
 ### Run Evaluation Tests
+
 ```bash
 python -m evals.runner                    # All tests
 python -m evals.runner --category=high_quality  # Category
@@ -135,6 +146,7 @@ python -m evals.runner --verbose          # Detailed output
 ```
 
 ### Modify Prompts
+
 1. Edit relevant `evaluators/*/prompts.py`
 2. Run evals to verify behavior: `python -m evals.runner`
 3. Adjust expected scores if needed in `evals/test_cases/`
@@ -142,6 +154,7 @@ python -m evals.runner --verbose          # Detailed output
 ## Testing & Validation
 
 ### Run Evaluation Suite
+
 ```bash
 # Full eval suite - validates all evaluators
 python -m evals.runner
@@ -151,6 +164,7 @@ python -m evals.runner --category=extraction_artifacts
 ```
 
 ### Pre-Commit Checklist
+
 - [ ] Run `python main.py` (basic smoke test)
 - [ ] Run `python -m evals.runner` (evaluator validation)
 - [ ] No hardcoded values (check for string literals)
@@ -160,6 +174,7 @@ python -m evals.runner --category=extraction_artifacts
 ## Code Patterns
 
 ### ✅ Correct Patterns
+
 ```python
 # Config access
 model = config.models.overrides.get('llm_rubric', config.models.default)
@@ -177,6 +192,7 @@ results = await asyncio.gather(*tasks, return_exceptions=True)
 ```
 
 ### ❌ Never Do
+
 ```python
 model = "gpt-5-mini"  # Hardcoded value
 await evaluator.aevaluate(...)  # No error handling
@@ -187,15 +203,17 @@ for eval in evaluators:  # Sequential instead of concurrent
 ## Debugging
 
 ### Common Issues & Fixes
-| Issue | Fix |
-|-------|-----|
-| "model hardcoded" | Search for string literals, use config |
-| "truncated content" | Check `text_preview` stores full text |
-| "API timeout" | Increase timeout in config |
-| "evaluator scores off" | Run `python -m evals.runner` to validate |
-| "extraction artifacts flagged" | Check prompts ignore web elements |
+
+| Issue                          | Fix                                      |
+| ------------------------------ | ---------------------------------------- |
+| "model hardcoded"              | Search for string literals, use config   |
+| "truncated content"            | Check `text_preview` stores full text    |
+| "API timeout"                  | Increase timeout in config               |
+| "evaluator scores off"         | Run `python -m evals.runner` to validate |
+| "extraction artifacts flagged" | Check prompts ignore web elements        |
 
 ### Debug Commands
+
 ```bash
 # Check config
 python -c "from config import load_config; print(load_config().models.default)"
@@ -210,6 +228,7 @@ python -c "import os; print('APIs:', bool(os.getenv('OPENAI_API_KEY')))"
 ## Critical Rules
 
 **ALWAYS**:
+
 - Store ALL values in config - NO hardcoding
 - Keep prompts in `prompts.py` files
 - Handle errors gracefully
@@ -217,15 +236,17 @@ python -c "import os; print('APIs:', bool(os.getenv('OPENAI_API_KEY')))"
 - Store full text, never truncate
 
 **NEVER**:
+
 - Hardcode API keys, models, or thresholds
 - Put prompts in evaluator logic
 - Flag web artifacts (author bylines, timestamps) as issues
 - Use synchronous code in evaluators
 - Commit without running tests
 
-## Extraction Artifacts to Ignore
+## Extraction Artifacts to Ignore (Keep In Mind for Prompt Engineering on Evaluators)
 
 The evaluators MUST ignore these web extraction artifacts:
+
 - Author metadata (names, bios, "Written by")
 - Timestamps ("Published", "Updated on")
 - Social buttons ("Share", "Tweet", "FacebookTwitterLinkedIn")

@@ -1,0 +1,1 @@
+"""Expected score ranges for test cases."""
