@@ -17,11 +17,11 @@ except ImportError:
     logger.warning("BeautifulSoup not available for HTML processing")
 
 try:
-    from markdown import markdown
+    import markdown_it
     MARKDOWN_AVAILABLE = True
 except ImportError:
     MARKDOWN_AVAILABLE = False
-    logger.warning("Markdown library not available")
+    logger.warning("markdown-it-py library not available")
 
 
 def convert_to_plain_text(content: str, preserve_structure: bool = False) -> str:
@@ -69,7 +69,8 @@ def convert_to_plain_text(content: str, preserve_structure: bool = False) -> str
     # Convert markdown to HTML first for consistent processing
     if is_markdown and MARKDOWN_AVAILABLE:
         try:
-            html_content = markdown(content)
+            md = markdown_it.MarkdownIt()
+            html_content = md.render(content)
         except Exception as e:
             logger.debug(f"Markdown conversion failed, treating as HTML/plain: {e}")
             html_content = content
