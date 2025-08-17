@@ -1,39 +1,46 @@
-# Chunk Auditor V2 - Claude Code Guidelines
+# Chunk Auditor - AI Assistant Guidelines
 
-## Project Context
+## Project Overview
 
-**Purpose**: Evaluate web content for AI retrieval readiness by analyzing chunks across 6 dimensions (query-answer, entity focus, LLM rubric, structured data, structure quality, size fit).
+**Purpose**: Evaluate web content for AI retrieval readiness across 4 dimensions:
+- Query-Answer completeness
+- Entity focus & coherence  
+- LLM rubric quality
+- Structure quality
 
-**Tech Stack**:
-
-- Python 3.11+
-- LlamaIndex (document processing & evaluation)
-- OpenAI API (LLM evaluations & entity extraction)
-- Firecrawl (web scraping)
-- Voyage AI (embeddings, optional)
+**Tech Stack**: Python 3.11+ • LlamaIndex • OpenAI API • Firecrawl • Voyage AI (optional)
 
 ## Project Structure
 
 ```
-chunk_auditor_v2/
+.
 ├── config/              # YAML config + dataclass handlers
-├── core/               # Document loading, processing pipeline
-├── evaluators/         # [DEPRECATED] Old scoring modules
-├── evaluators_v2/      # NEW: Pydantic-based evaluators with structured outputs
-│   ├── base/           # Base classes and shared models
-│   ├── query_answer/   # Query-Answer completeness evaluator
-│   ├── llm_rubric/     # LLM rubric quality evaluator
-│   ├── entity_focus/   # Entity focus evaluator
-│   ├── structure_quality/ # Structure quality evaluator
-│   └── composite/      # Orchestrator for all evaluators
-├── extractors/         # Content boundary analyzer
-├── reporting/          # JSON/Markdown/Summary generation
-└── main.py            # CLI entry point
+├── core/                # Document loading, processing pipeline
+├── evaluators/          # AI evaluators with Pydantic models
+│   ├── base/            # Base classes and shared models
+│   ├── query_answer/    # Query-Answer completeness
+│   │   ├── prompts.py   # Evaluation prompts
+│   │   └── evaluator.py
+│   ├── llm_rubric/      # LLM rubric quality
+│   │   ├── prompts.py   # Evaluation prompts + few-shot
+│   │   └── evaluator.py
+│   ├── entity_focus/    # Entity extraction & focus
+│   │   ├── prompts.py   # Evaluation prompts
+│   │   └── evaluator.py
+│   ├── structure_quality/ # Structure assessment
+│   │   ├── prompts.py   # Evaluation prompts
+│   │   └── evaluator.py
+│   └── composite/       # Orchestrator for all evaluators
+├── evals/               # Evaluation test framework
+│   ├── test_cases/      # Hardcoded test chunks
+│   ├── runner.py        # Test runner
+│   └── README.md        # Eval documentation
+├── extractors/          # Content boundary analyzer
+├── reporting/           # Report generation
+└── main.py             # CLI entry point
 ```
 
-**Note**: The project now uses `evaluators_v2/` which provides Pydantic-based structured outputs with OpenAI integration for better type safety and reduced code complexity.
-
-## Essential Commands
+## Quick Start
 
 ```bash
 # Setup
@@ -45,250 +52,186 @@ python main.py --url "https://example.com"  # Analyze URL
 python main.py --file "content.html"        # Analyze file
 python main.py                              # Test with sample
 
-# Development
-python -m pytest tests/                     # Run tests
-pip freeze > requirements.txt               # Update deps
+# Run evaluations
+python -m evals.runner                      # Test all evaluators
+python -m evals.runner --category=high_quality  # Test specific category
 
 # Debug
 python main.py --debug --url "..."          # Verbose logging
 ```
 
-## RAG Context Philosophy
+## Core Principles
 
-The tool evaluates chunks as focused contributions in multi-chunk retrieval systems:
+**IMPORTANT**: This tool evaluates chunks for multi-chunk RAG retrieval:
+- 3-5 chunks typically retrieved together
+- Each chunk = focused contribution, not exhaustive
+- "Standalone" = understandable, not complete
+- Different chunk types serve different purposes
 
-- Chunks work together (3-5 typically retrieved)
-- Each chunk should be coherent and focused, not exhaustive
-- "Standalone" means understandable, not complete
-- Different chunk types serve different purposes (definitions, examples, overviews, etc.)
-- "General" type serves as catchall for mixed or uncategorized content
+## Development Guidelines
 
-## Code Style & Conventions
+### Code Conventions
+- **Imports**: Group stdlib → third-party → local. NEVER use `from module import *`
+- **Async**: All evaluators use `async def aevaluate()`. Use `asyncio.gather()` for concurrency
+- **Errors**: Degrade gracefully. Log with `logger.error()`, return default scores on failure
+- **Models**: `@dataclass` for simple, Pydantic for OpenAI outputs
 
-### Imports
+### Prompts Organization
+- **ALWAYS** keep prompts in dedicated `prompts.py` files
+- Each evaluator directory has its own prompts module
+- System prompts, user templates, and few-shot examples separated
+- No prompts in evaluator logic files
 
-- Use relative imports within package: `from .core import pipeline`
-- Group: stdlib, third-party, local
-- NEVER use `from module import *`
+## Key Components
 
-### Async/Await
+### Configuration (`config/config.yaml`)
+**IMPORTANT**: ALL values must be configurable - no hardcoding!
+- Model settings: `models.default` and `models.overrides`
+- Scoring weights: `scoring.weights` (must sum to 1.0)
+- Content preprocessing: boundary detection, filtering
 
-- All evaluators use `async def aevaluate()`
-- Use `asyncio.gather()` for concurrent operations
-- ThreadPoolExecutor fallback for sync-in-async contexts
+### Evaluators (`evaluators/*/`)
+- Each has `evaluator.py` (logic) and `prompts.py` (AI prompts)
+- All use structured Pydantic outputs
+- Concurrent execution via composite evaluator
+- MUST handle extraction artifacts (author bylines, timestamps, social buttons)
 
-### Error Handling
+### Evaluation Tests (`evals/`)
+- 20 hardcoded test cases across 4 categories
+- Validates evaluator behavior with tolerance ranges
+- Run with: `python -m evals.runner`
 
-- API failures should degrade gracefully (continue with partial results)
-- Log errors with `logger.error()`, don't crash
-- Return default scores when evaluator fails
+## Configuration
 
-### Data Classes
-
-- Use `@dataclass` for simple structures
-- Use Pydantic models for OpenAI structured outputs
-- Config uses nested dataclasses (see `config_handler.py`)
-
-## Key Files & Their Roles
-
-### config/config.yaml
-
-- **IMPORTANT**: Central config - all hardcoded values should be here
-- Model settings under `models:` with override capability
-- Scoring weights under `scoring.weights`
-- Content preprocessing under `content_preprocessing:`
-
-### core/document_loader.py
-
-- Loads from URL (Firecrawl), file, or direct content
-- Applies ContentBoundaryAnalyzer for URL inputs
-- Smart truncation at natural boundaries
-- **Line 102**: Fallback model should use config.models.default
-
-### evaluators/composite.py
-
-- Orchestrates all evaluators concurrently
-- Calculates weighted scores
-- Exports results to dict format
-- **Line 169**: Now stores full text, not preview
-
-### reporting/report_generator.py
-
-- Generates JSON, Markdown, and Summary reports
-- **Line 156**: Shows "Full Content" not "Content Preview"
-- Includes terminology section explaining scores
-
-### extractors/content_boundary_analyzer.py
-
-- AI-powered detection of nav/footer boundaries
-- Fuzzy matching for header detection
-- Only applies to URL-sourced content
-- Configurable confidence thresholds
-
-## Configuration Management
-
-### Model Configuration
-
-```yaml
-models:
-  default: "gpt-5-mini" # Used by all unless overridden
-  overrides: # Optional overrides per evaluator
-    content_preprocessing: "gpt-5-nano"
-    query_answer: "gpt-5"
-    llm_rubric: "gpt-4.1"
-```
-
-### Adding New Config
-
-1. Add to `config.yaml`
-2. Update dataclass in `config_handler.py`
-3. Access via `config.section.property`
-
-### Environment Variables
-
+### Required Environment Variables
 ```bash
 OPENAI_API_KEY=sk-...
 FIRECRAWL_API_KEY=fc-...
-VOYAGE_API_KEY=pa-...
+VOYAGE_API_KEY=pa-...  # Optional
 ```
+
+### Adding Config Values
+1. Add to `config/config.yaml`
+2. Update dataclass in `config_handler.py`
+3. Access: `config.section.property`
+
+**NEVER** hardcode values - use config!
 
 ## Common Tasks
 
 ### Add New Evaluator
+1. Create directory in `evaluators/your_evaluator/`
+2. Add `evaluator.py` (inherit from `BaseStructuredEvaluator`)
+3. Add `prompts.py` with system/user prompts
+4. Register in `CompositeEvaluator.__init__()`
+5. Update weights in `config.yaml`
+6. Add test cases in `evals/test_cases/`
 
-1. Create class in `evaluators/` inheriting from `BaseEvaluator`
-2. Implement `async def aevaluate()` method
-3. Add to `CompositeEvaluator.__init__()`
-4. Update scoring weights in config.yaml
+### Run Evaluation Tests
+```bash
+python -m evals.runner                    # All tests
+python -m evals.runner --category=high_quality  # Category
+python -m evals.runner --verbose          # Detailed output
+```
 
-### Modify Scoring Weights
-
-1. Edit `config/config.yaml` → `scoring.weights`
-2. Weights should sum to 1.0
-3. Test impact with `python main.py`
-
-### Debug Content Boundaries
-
-1. Set `content_preprocessing.debug_output: true` in config
-2. Check logs for boundary detection details
-3. Adjust `min_confidence` if needed (1-5 scale)
-
-### Handle Large Content
-
-1. Adjust `scraping.max_content_length` in config
-2. Increase `content_preprocessing.analysis_length` for better boundary detection
-3. Consider `chunking.max_chunk_size` for token limits
+### Modify Prompts
+1. Edit relevant `evaluators/*/prompts.py`
+2. Run evals to verify behavior: `python -m evals.runner`
+3. Adjust expected scores if needed in `evals/test_cases/`
 
 ## Testing & Validation
 
-### Quick Tests
+### Run Evaluation Suite
+```bash
+# Full eval suite - validates all evaluators
+python -m evals.runner
 
-```python
-# Test config loading
-from config import load_config
-config = load_config()
-print(config.models.default)
-
-# Test document loader
-from core.document_loader import EnhancedDocumentLoader
-loader = EnhancedDocumentLoader(config=config)
-doc = loader.load_from_content("Test content", format="text")
-
-# Test pipeline
-from core.pipeline import ChunkAuditorPipeline
-pipeline = ChunkAuditorPipeline(config)
+# Check specific behavior
+python -m evals.runner --category=extraction_artifacts
 ```
 
-### Validation Checklist
+### Pre-Commit Checklist
+- [ ] Run `python main.py` (basic smoke test)
+- [ ] Run `python -m evals.runner` (evaluator validation)
+- [ ] No hardcoded values (check for string literals)
+- [ ] Prompts in `prompts.py` files only
+- [ ] Async/await properly used
 
-- [ ] All API calls use try/except blocks
-- [ ] Config values not hardcoded
-- [ ] Async methods properly awaited
-- [ ] Reports show full text (not truncated)
-- [ ] Boundary detection only for URLs
+## Code Patterns
 
-## Important Patterns
-
-### Config Access Pattern
-
+### ✅ Correct Patterns
 ```python
-# Good - uses config
+# Config access
 model = config.models.overrides.get('llm_rubric', config.models.default)
 
-# Bad - hardcoded
-model = "gpt-5-mini"
-```
-
-### Error Handling Pattern
-
-```python
+# Error handling with graceful degradation
 try:
     result = await evaluator.aevaluate(...)
 except Exception as e:
     logger.error(f"Evaluator failed: {e}")
-    result = EvaluationResult(score=0.0, passing=False, feedback=str(e))
-```
+    result = EvaluationResult(score=0.0, passing=False)
 
-### Async Execution Pattern
-
-```python
-# Concurrent evaluation
+# Concurrent async execution
 tasks = [eval.aevaluate(node) for eval in evaluators]
 results = await asyncio.gather(*tasks, return_exceptions=True)
 ```
 
-## Debugging Tips
-
-### Common Issues
-
-- **"model hardcoded"**: Check for string literals like "gpt-5-mini"
-- **"truncated content"**: Ensure `text_preview` stores full text
-- **"API timeout"**: Increase timeout in config or use fallback
-- **"boundary not detected"**: Check confidence threshold and analysis_length
-
-### Debug Commands
-
-```bash
-# See all config values
-python -c "from config import load_config; import json; print(json.dumps(load_config().__dict__, default=str, indent=2))"
-
-# Test specific evaluator
-python -c "from evaluators_v2.query_answer import QueryAnswerEvaluator; e = QueryAnswerEvaluator(weight=0.25); print('Loaded')"
-
-# Check API connections
-python -c "import os; print('OpenAI:', bool(os.getenv('OPENAI_API_KEY'))); print('Firecrawl:', bool(os.getenv('FIRECRAWL_API_KEY')))"
+### ❌ Never Do
+```python
+model = "gpt-5-mini"  # Hardcoded value
+await evaluator.aevaluate(...)  # No error handling
+for eval in evaluators:  # Sequential instead of concurrent
+    await eval.aevaluate(node)
 ```
 
-## Workflow Guidelines
+## Debugging
 
-### When Making Changes
+### Common Issues & Fixes
+| Issue | Fix |
+|-------|-----|
+| "model hardcoded" | Search for string literals, use config |
+| "truncated content" | Check `text_preview` stores full text |
+| "API timeout" | Increase timeout in config |
+| "evaluator scores off" | Run `python -m evals.runner` to validate |
+| "extraction artifacts flagged" | Check prompts ignore web elements |
 
-1. **ALWAYS** check if value should be in config
-2. **NEVER** commit hardcoded API keys or models
-3. **TEST** with `python main.py` before committing
-4. **UPDATE** this file if adding new patterns
+### Debug Commands
+```bash
+# Check config
+python -c "from config import load_config; print(load_config().models.default)"
 
-### Before Committing
+# Test evaluator loading
+python -c "from evaluators.query_answer import QueryAnswerEvaluator; print('OK')"
 
-1. Run basic test: `python main.py`
-2. Check no hardcoded values remain
-3. Verify async/await properly used
-4. Ensure error handling in place
+# Verify API keys
+python -c "import os; print('APIs:', bool(os.getenv('OPENAI_API_KEY')))"
+```
 
-### Code Review Checklist
+## Critical Rules
 
-- [ ] No hardcoded configuration values
-- [ ] Proper async/await usage
-- [ ] Error handling with graceful degradation
-- [ ] Config values accessed correctly
-- [ ] Full text displayed (not truncated)
+**ALWAYS**:
+- Store ALL values in config - NO hardcoding
+- Keep prompts in `prompts.py` files
+- Handle errors gracefully
+- Run evals after prompt changes
+- Store full text, never truncate
 
-## Notes for Claude
+**NEVER**:
+- Hardcode API keys, models, or thresholds
+- Put prompts in evaluator logic
+- Flag web artifacts (author bylines, timestamps) as issues
+- Use synchronous code in evaluators
+- Commit without running tests
 
-- **Priority**: Remove ALL hardcoded values - everything should be configurable
-- **Focus**: V2 only - V1 is deprecated and not maintained
-- **Testing**: Always run `python main.py` after changes to verify functionality
-- **Reports**: Must show full chunk text for context, never truncate
-- **Config**: When in doubt, add to config.yaml rather than hardcode
-- **Async**: Use async patterns consistently throughout evaluators
-- **Entity Extraction**: Now handled by Entity Focus evaluator during evaluation phase (no external APIs)
+## Extraction Artifacts to Ignore
+
+The evaluators MUST ignore these web extraction artifacts:
+- Author metadata (names, bios, "Written by")
+- Timestamps ("Published", "Updated on")
+- Social buttons ("Share", "Tweet", "FacebookTwitterLinkedIn")
+- Navigation elements (breadcrumbs, menus)
+- Newsletter signups and CTAs
+- View counts, read times
+- Footer elements
+
+These are NOT content quality issues - they're normal web elements.
