@@ -18,7 +18,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from config import load_config
 from core.pipeline import ChunkAuditorPipeline
-from evaluators.composite import CompositeEvaluator
+from evaluators_v3.composite.evaluator import CompositeEvaluatorV3
 from llama_index.core.schema import TextNode
 
 from .test_cases import ALL_TEST_CASES
@@ -39,7 +39,7 @@ class EvalRunner:
         """
         self.config = load_config(config_path)
         self.pipeline = ChunkAuditorPipeline(self.config)
-        self.composite_evaluator = CompositeEvaluator(self.config)
+        self.composite_evaluator = CompositeEvaluatorV3(self.config)
         self.comparator = EvalComparator()
         # Create semaphore for rate limiting concurrent API calls
         self.semaphore = asyncio.Semaphore(self.config.concurrency.max_llm_calls)
@@ -67,19 +67,22 @@ class EvalRunner:
         )
         
         try:
-            # Run through the composite evaluator with semaphore for rate limiting
+            # Run through the V3 composite evaluator with semaphore for rate limiting
             async with self.semaphore:
-                results = await self.composite_evaluator.evaluate_nodes([node])
+                results = await self.composite_evaluator.evaluate_all([node])
             
             if results and len(results) > 0:
                 result = results[0]
                 
-                # Convert to dictionary format for comparison
+                # Convert V3 format to dictionary for comparison
                 actual_results = {
-                    "scores": result.scores,
-                    "total_score": result.total_score,
-                    "label": result.label,
-                    "passing": result.passing
+                    "scores": {
+                        name: res["score"]
+                        for name, res in result.get("individual_results", {}).items()
+                    },
+                    "total_score": result.get("composite_score", 0),
+                    "label": "passing" if result.get("composite_passing") else "failing",
+                    "passing": result.get("composite_passing", False)
                 }
                 
                 # Compare with expected

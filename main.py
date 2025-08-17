@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Main entry point for Chunk Auditor V2."""
+"""Main entry point for Chunk Auditor."""
 
 import os
 import sys
@@ -19,7 +19,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config import load_config
 from core.document_loader import EnhancedDocumentLoader
 from core.pipeline import ChunkAuditorPipeline
-from evaluators_v2.composite.evaluator import CompositeEvaluatorV2
+from evaluators_v3.composite.evaluator import CompositeEvaluatorV3
 from reporting.report_generator import EnhancedReportGenerator
 
 # Load environment variables
@@ -61,15 +61,18 @@ async def analyze_content(content: str, format: str = "html", config=None):
     logger.info("Processing through pipeline...")
     nodes = await pipeline.process_document(document)
     
-    # Comprehensive evaluation with CompositeEvaluatorV2
-    logger.info("Evaluating chunks with V2 composite evaluator...")
-    evaluator = CompositeEvaluatorV2(config)
+    # Comprehensive evaluation with CompositeEvaluatorV3
+    logger.info("Evaluating chunks with composite evaluator...")
+    evaluator = CompositeEvaluatorV3(config)
     
     # Evaluate all nodes
-    evaluation_results = await evaluator.evaluate_nodes(nodes)
+    evaluation_results = await evaluator.evaluate_all(nodes)
     
     # Convert to export format
-    export_data = evaluator.export_results(evaluation_results)
+    export_data = {
+        'chunks': evaluation_results,
+        'summary': evaluator.generate_summary(evaluation_results)
+    }
     
     return export_data
 
@@ -104,15 +107,18 @@ async def analyze_url(url: str, config=None):
     logger.info("Processing through pipeline...")
     nodes = await pipeline.process_document(document)
     
-    # Comprehensive evaluation with CompositeEvaluatorV2
-    logger.info("Evaluating chunks with V2 composite evaluator...")
-    evaluator = CompositeEvaluatorV2(config)
+    # Comprehensive evaluation with CompositeEvaluatorV3
+    logger.info("Evaluating chunks with composite evaluator...")
+    evaluator = CompositeEvaluatorV3(config)
     
     # Evaluate all nodes
-    evaluation_results = await evaluator.evaluate_nodes(nodes)
+    evaluation_results = await evaluator.evaluate_all(nodes)
     
     # Convert to export format
-    export_data = evaluator.export_results(evaluation_results)
+    export_data = {
+        'chunks': evaluation_results,
+        'summary': evaluator.generate_summary(evaluation_results)
+    }
     
     # Add source metadata
     export_data['metadata'] = {
@@ -139,49 +145,23 @@ def save_results(results: dict, output_dir: str = "output", config=None):
     if not config:
         config = load_config()
     
-    # Use EnhancedReportGenerator for comprehensive reports
-    from evaluators_v2.composite.models import CompositeEvaluationResultV2
-    
-    # Convert results to CompositeEvaluationResultV2 objects if needed
+    # Simplified save for V3 results
     if 'chunks' in results and results['chunks']:
-        # Check if already in proper format
-        first_chunk = results['chunks'][0]
-        if not isinstance(first_chunk, dict) or 'total_score' not in first_chunk:
-            # Legacy format - use simplified save
-            _save_legacy_results(results, output_dir)
-            return
+        os.makedirs(output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Convert dict results to CompositeEvaluationResultV2 objects
-        chunk_results = []
-        for chunk_dict in results['chunks']:
-            chunk_results.append(CompositeEvaluationResultV2(
-                chunk_id=chunk_dict.get('chunk_id', ''),
-                chunk_index=chunk_dict.get('chunk_index', 0),
-                heading=chunk_dict.get('heading', ''),
-                text_preview=chunk_dict.get('text_preview', ''),
-                token_count=chunk_dict.get('token_count', 0),
-                feedback_markdown=chunk_dict.get('feedback_markdown', chunk_dict.get('feedback', {})),
-                feedback_json=chunk_dict.get('feedback_json', {}),
-                scores=chunk_dict.get('scores', {}),
-                normalized_weights=chunk_dict.get('normalized_weights', {}),
-                total_score=chunk_dict.get('total_score', 0),
-                label=chunk_dict.get('label', ''),
-                passing=chunk_dict.get('passing', False),
-                entities=chunk_dict.get('entities', []),
-                metadata=chunk_dict.get('metadata', {}),
-                evaluation_metadata=chunk_dict.get('evaluation_metadata', {}),
-                processing_summary=chunk_dict.get('processing_summary', {})
-            ))
+        # Save JSON results
+        json_file = os.path.join(output_dir, f"analysis_{timestamp}.json")
+        with open(json_file, 'w', encoding='utf-8') as f:
+            json.dump(results, f, indent=2, ensure_ascii=False)
+        logger.info(f"Results saved to {json_file}")
         
-        # Generate comprehensive reports
-        reporter = EnhancedReportGenerator(config)
-        files = reporter.generate_report(
-            chunk_results,
-            output_dir,
-            results.get('metadata')
-        )
-        
-        logger.info(f"Reports generated: {', '.join(files.values())}")
+        # Save markdown summary
+        if 'summary' in results:
+            md_file = os.path.join(output_dir, f"summary_{timestamp}.md")
+            with open(md_file, 'w', encoding='utf-8') as f:
+                f.write(results['summary'])
+            logger.info(f"Summary saved to {md_file}")
     else:
         _save_legacy_results(results, output_dir)
 
@@ -199,7 +179,7 @@ def _save_legacy_results(results: dict, output_dir: str = "output"):
 async def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Chunk Auditor V2 - LLM SEO Optimization Tool"
+        description="Chunk Auditor - AI Retrieval Readiness Evaluation Tool"
     )
     parser.add_argument("--url", type=str, help="URL to analyze")
     parser.add_argument("--file", type=str, help="Local file to analyze")

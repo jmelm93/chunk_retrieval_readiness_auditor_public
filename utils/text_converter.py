@@ -310,24 +310,6 @@ def get_text_metadata(text: str) -> dict:
 
 
 def load_ignore_artifacts() -> str:
-    """Load the shared ignore artifacts text for embedding in prompts.
-    
-    Returns:
-        The ignore artifacts text to embed in system prompts
-    """
-    try:
-        import os
-        # Look for the artifacts file in evaluators_v2/shared directory
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        artifacts_path = os.path.join(current_dir, "evaluators_v2", "shared", "ignore_web_artifacts.md")
-        
-        if os.path.exists(artifacts_path):
-            with open(artifacts_path, 'r', encoding='utf-8') as f:
-                return f.read().strip()
-    except Exception as e:
-        logger.debug(f"Could not load ignore_web_artifacts.md: {e}")
-    
-    # Fallback to hardcoded version
     return """Ignore these extraction artifacts (do not penalize or extract):
 - Author bylines, bios, avatars (e.g., "Written by…")
 - Timestamps/dates ("Published", "Updated on", "Last modified")

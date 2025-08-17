@@ -6,7 +6,8 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from loguru import logger
 
-from evaluators.composite import ChunkEvaluationResult
+# V3: ChunkEvaluationResult no longer used - working with dict results directly
+from typing import Union
 
 
 class EnhancedReportGenerator:
@@ -22,7 +23,7 @@ class EnhancedReportGenerator:
         self.config = config
     
     def generate_report(self,
-                       results: List[ChunkEvaluationResult],
+                       results: List[Union[Dict[str, Any], Any]],
                        output_dir: str = "output",
                        metadata: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         """
@@ -78,7 +79,7 @@ class EnhancedReportGenerator:
             return f"audit_{timestamp}"
     
     def _generate_json_report(self,
-                              results: List[ChunkEvaluationResult],
+                              results: List[Dict[str, Any]],
                               filepath: str,
                               metadata: Optional[Dict[str, Any]]) -> None:
         """Generate JSON report."""
@@ -94,7 +95,7 @@ class EnhancedReportGenerator:
         logger.info(f"JSON report saved to {filepath}")
     
     def _generate_markdown_report(self,
-                                  results: List[ChunkEvaluationResult],
+                                  results: List[Dict[str, Any]],
                                   filepath: str,
                                   metadata: Optional[Dict[str, Any]]) -> None:
         """Generate Markdown report."""
@@ -161,17 +162,29 @@ class EnhancedReportGenerator:
         
         for i, result in enumerate(results, 1):
             # Create anchor-friendly ID for the chunk
-            anchor_id = self._create_anchor_id(i, result.heading)
-            lines.append(f"### Chunk {i}: {result.heading or '[No Heading]'} {{#{anchor_id}}}\n")
+            # V3: Get heading from chunk_metadata
+            heading = result.get('chunk_metadata', {}).get('heading', '')
+            anchor_id = self._create_anchor_id(i, heading)
+            lines.append(f"### Chunk {i}: {heading or '[No Heading]'} {{#{anchor_id}}}\n")
             
             # Score and label
-            lines.append(f"**Overall Score**: {result.total_score:.1f}/100 - {result.label}\n")
+            # V3: Get composite score and calculate label
+            score = result.get('composite_score', result.get('total_score', 0))
+            if score >= 80:
+                label = "Well Optimized"
+            elif score >= 60:
+                label = "Needs Work"
+            else:
+                label = "Poorly Optimized"
+            lines.append(f"**Overall Score**: {score:.1f}/100 - {label}\n")
             
             # Score breakdown
             lines.append("**Score Breakdown**:")
-            for evaluator, score in result.scores.items():
-                # Convert normalized score (0-1) to percentage (0-100)
-                score_percentage = score * 100
+            # V3: Get scores from individual_results
+            individual = result.get('individual_results', {})
+            for evaluator, eval_result in individual.items():
+                # V3: Score is already in 0-100 scale
+                score_percentage = eval_result.get('score', 0)
                 lines.append(f"- {self._format_evaluator_name(evaluator)}: {score_percentage:.1f}/100")
             lines.append("")
             
@@ -179,15 +192,19 @@ class EnhancedReportGenerator:
             # Convert to plain text to show what was actually evaluated
             try:
                 from ..utils import convert_to_plain_text
-                plain_text_content = convert_to_plain_text(result.text_preview)
+                # V3: Get text from chunk_metadata
+                text_preview = result.get('chunk_metadata', {}).get('text_preview', '')
+                plain_text_content = convert_to_plain_text(text_preview)
             except ImportError:
-                plain_text_content = result.text_preview
+                text_preview = result.get('chunk_metadata', {}).get('text_preview', '')
+                plain_text_content = text_preview
             
             lines.append("**Chunk Content**:")
             lines.append(f"```\n{plain_text_content}\n```\n")
             
             # Feedback
-            if result.feedback:
+            # V3: Get feedback from individual_results
+            if result.get('individual_results'):
                 lines.append("**Evaluation Feedback**:")
                 lines.append("")
                 
@@ -196,8 +213,9 @@ class EnhancedReportGenerator:
                 
                 # Process evaluators in defined order
                 for evaluator_key in evaluator_order:
-                    if evaluator_key in result.feedback:
-                        feedback = result.feedback[evaluator_key]
+                    individual = result.get('individual_results', {})
+                    if evaluator_key in individual:
+                        feedback = individual[evaluator_key].get('feedback', '')
                         evaluator_name = self._format_evaluator_name(evaluator_key)
                         
                         # Get the weight for this evaluator from config if available
@@ -220,7 +238,10 @@ class EnhancedReportGenerator:
                             lines.append("")
                 
                 # Handle any evaluators not in the standard order
-                for evaluator, feedback in result.feedback.items():
+                # V3: Extract feedback from individual results
+                individual = result.get('individual_results', {})
+                for evaluator, eval_result in individual.items():
+                    feedback = eval_result.get('feedback', '')
                     if evaluator not in evaluator_order:
                         evaluator_name = self._format_evaluator_name(evaluator)
                         lines.append(f"### {evaluator_name}")
@@ -240,7 +261,7 @@ class EnhancedReportGenerator:
         logger.info(f"Markdown report saved to {filepath}")
     
     def _generate_summary_report(self,
-                                 results: List[ChunkEvaluationResult],
+                                 results: List[Dict[str, Any]],
                                  filepath: str,
                                  metadata: Optional[Dict[str, Any]]) -> None:
         """Generate concise summary report."""
@@ -316,7 +337,7 @@ class EnhancedReportGenerator:
         
         logger.info(f"Summary report saved to {filepath}")
     
-    def _generate_summary_stats(self, results: List[ChunkEvaluationResult]) -> Dict[str, Any]:
+    def _generate_summary_stats(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Generate summary statistics."""
         if not results:
             return {
@@ -331,28 +352,30 @@ class EnhancedReportGenerator:
             }
         
         total = len(results)
-        passing = sum(1 for r in results if r.passing)
-        avg_score = sum(r.total_score for r in results) / total
+        # V3: Access dict fields directly
+        passing = sum(1 for r in results if r.get('composite_passing', r.get('passing', False)))
+        avg_score = sum(r.get('composite_score', r.get('total_score', 0)) for r in results) / total
         
-        # Count by label
-        well_optimized = sum(1 for r in results if r.label == "Well Optimized")
-        needs_work = sum(1 for r in results if r.label == "Needs Work")
-        poorly_optimized = sum(1 for r in results if r.label == "Poorly Optimized")
+        # Count by label (V3 doesn't have labels, so calculate based on score)
+        well_optimized = sum(1 for r in results if r.get('composite_score', r.get('total_score', 0)) >= 80)
+        needs_work = sum(1 for r in results if 60 <= r.get('composite_score', r.get('total_score', 0)) < 80)
+        poorly_optimized = sum(1 for r in results if r.get('composite_score', r.get('total_score', 0)) < 60)
         
-        # Aggregate issues from feedback
+        # Aggregate issues from V3 individual results
         issue_counts = {}
         for result in results:
-            # Extract flags from LLM rubric feedback if available
-            if 'llm_rubric' in result.feedback:
-                feedback_text = result.feedback['llm_rubric']
-                if '**Issues Detected:**' in feedback_text:
-                    issues_section = feedback_text.split('**Issues Detected:**')[1]
-                    # Parse bullet points for issues
-                    for line in issues_section.split('\n'):
-                        if line.strip().startswith('• '):
-                            issue = line.strip()[2:].strip()
-                            # Use the issue description as the flag
-                            issue_counts[issue] = issue_counts.get(issue, 0) + 1
+            # V3: Extract issues from individual evaluator results
+            if 'individual_results' in result:
+                for eval_name, eval_result in result.get('individual_results', {}).items():
+                    feedback = eval_result.get('feedback', '')
+                    if '**Issues:**' in feedback:
+                        issues_section = feedback.split('**Issues:**')[1].split('**')[0]
+                        for line in issues_section.split('\n'):
+                            line = line.strip()
+                            if line.startswith('- '):
+                                issue = line[2:].strip()
+                                if issue:
+                                    issue_counts[issue] = issue_counts.get(issue, 0) + 1
         
         top_issues = sorted(issue_counts.items(), key=lambda x: x[1], reverse=True)
         
@@ -380,7 +403,7 @@ class EnhancedReportGenerator:
         else:
             return f"chunk-{chunk_num}"
     
-    def _generate_chunk_overview_table(self, results: List[ChunkEvaluationResult]) -> List[str]:
+    def _generate_chunk_overview_table(self, results: List[Dict[str, Any]]) -> List[str]:
         """Generate a table overview of all chunks with scores and navigation links."""
         lines = []
         
@@ -390,9 +413,10 @@ class EnhancedReportGenerator:
         
         # Table rows
         for i, result in enumerate(results, 1):
-            # Create anchor link
-            anchor_id = self._create_anchor_id(i, result.heading)
-            heading_text = result.heading or '[No Heading]'
+            # Create anchor link (V3: get heading from chunk_metadata)
+            heading = result.get('chunk_metadata', {}).get('heading', '')
+            anchor_id = self._create_anchor_id(i, heading)
+            heading_text = heading or '[No Heading]'
             # Truncate heading if too long for table
             if len(heading_text) > 40:
                 heading_text = heading_text[:37] + "..."
@@ -400,17 +424,19 @@ class EnhancedReportGenerator:
             # Create linked heading
             linked_heading = f"[{heading_text}](#{anchor_id})"
             
-            # Get scores (convert normalized 0-1 to percentages for display)
-            overall = f"{result.total_score:.0f}"
-            qa_score = f"{result.scores.get('query_answer', 0) * 100:.0f}"
-            llm_score = f"{result.scores.get('llm_rubric', 0) * 100:.0f}"
-            struct_score = f"{result.scores.get('structure_quality', 0) * 100:.0f}"
-            entity_score = f"{result.scores.get('entity_focus', 0) * 100:.0f}"
+            # Get scores (V3: from individual_results)
+            overall = f"{result.get('composite_score', result.get('total_score', 0)):.0f}"
+            individual = result.get('individual_results', {})
+            qa_score = f"{individual.get('query_answer', {}).get('score', 0):.0f}"
+            llm_score = f"{individual.get('llm_rubric', {}).get('score', 0):.0f}"
+            struct_score = f"{individual.get('structure_quality', {}).get('score', 0):.0f}"
+            entity_score = f"{individual.get('entity_focus', {}).get('score', 0):.0f}"
             
             # Status indicator
-            if result.total_score >= 80:
+            overall_val = result.get('composite_score', result.get('total_score', 0))
+            if overall_val >= 80:
                 status = "🟢 Well optimized"
-            elif result.total_score >= 60:
+            elif overall_val >= 60:
                 status = "🟡 Needs work"
             else:
                 status = "🔴 Poorly optimized"
@@ -484,29 +510,38 @@ The table provides a quick assessment of all chunks with clickable links:
         }
         return name_map.get(name, name.replace('_', ' ').title())
     
-    def _chunk_to_dict(self, result: ChunkEvaluationResult) -> Dict[str, Any]:
-        """Convert chunk result to dictionary."""
+    def _chunk_to_dict(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert chunk result to dictionary (V3: already a dict)."""
+        # V3 results are already dictionaries
+        # Check if it's already in the right format
+        if 'composite_score' in result:
+            # V3 format
+            return result
+        
+        # Legacy format - try to adapt
         chunk_dict = {
-            'chunk_id': result.chunk_id,
-            'chunk_index': result.chunk_index,
-            'heading': result.heading,
-            'text_preview': result.text_preview,
-            'token_count': result.token_count,
-            'scores': result.scores,
-            'total_score': result.total_score,
-            'label': result.label,
-            'passing': result.passing,
-            'feedback': result.feedback,
-            'entities': result.entities
+            'chunk_id': result.get('chunk_id', ''),
+            'chunk_index': result.get('chunk_index', 0),
+            'heading': result.get('heading', ''),
+            'text_preview': result.get('text_preview', ''),
+            'token_count': result.get('token_count', 0),
+            'scores': result.get('scores', {}),
+            'total_score': result.get('total_score', 0),
+            'label': result.get('label', ''),
+            'passing': result.get('passing', False),
+            'feedback': result.get('feedback', {}),
+            'entities': result.get('entities', [])
         }
         
         # Extract additional data from feedback if available
         # These are stored in the evaluator feedback now
-        if 'llm_rubric' in result.feedback:
+        # V3: Check in individual_results
+        individual = result.get('individual_results', {})
+        if 'llm_rubric' in individual:
             # Parse LLM rubric feedback for structured data
             try:
                 import re
-                feedback_text = result.feedback['llm_rubric']
+                feedback_text = individual['llm_rubric'].get('feedback', '')
                 
                 # Extract flags from issues section
                 flags = []

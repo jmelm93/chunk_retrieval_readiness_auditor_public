@@ -40,14 +40,6 @@ class QueryAnswerEval(BaseModel):
     
     model_config = ConfigDict(extra='forbid')
     
-    # Base evaluator fields (duplicated for standalone compatibility)
-    overall_score: int = Field(ge=0, le=100, description="Overall score from 0-100")
-    overall_assessment: str = Field(description="Clear and concise assessment (2-4 sentences)")
-    strengths: List[str] = Field(description="Key strengths identified by the evaluator")
-    issues: List[str] = Field(description="Key issues identified by the evaluator")
-    recommendations: List[str] = Field(description="Specific actionable recommendations")
-    passing: bool = Field(description="Whether evaluation passed the evaluator's threshold")
-    
     # Query-Answer specific fields
     chunk_type: Literal["overview", "detail", "example", "definition", "general"] = Field(description="Classification of the chunk type based on content analysis")
     likely_queries: List[str] = Field(description="3-8 likely user queries this chunk could help answer")
@@ -59,7 +51,15 @@ class QueryAnswerEval(BaseModel):
     base_score: int = Field(description="Starting score before penalties (always 100)")
     provisional_score: int = Field(ge=0, le=100, description="Score after applying penalties but before quality caps")
     final_score: int = Field(ge=0, le=100, description="Final score after applying both penalties and quality caps")
-    
+
+    #
+    overall_score: int = Field(ge=0, le=100, description="Overall score from 0-100")
+    overall_assessment: str = Field(description="Clear and concise assessment (2-4 sentences)")
+    strengths: List[str] = Field(description="Key strengths identified by the evaluator")
+    issues: List[str] = Field(description="Key issues identified by the evaluator")
+    recommendations: List[str] = Field(description="Specific actionable recommendations")
+    passing: bool = Field(description="Whether evaluation passed the evaluator's threshold")
+
     def model_post_init(self, __context: Any) -> None:
         """Ensure overall_score matches final_score for consistency."""
         if hasattr(self, 'final_score'):
