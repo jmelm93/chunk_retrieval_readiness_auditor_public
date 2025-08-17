@@ -472,52 +472,6 @@ The table provides a quick assessment of all chunks with clickable links:
 | **Struct** | Structure Quality score |
 | **Entity** | Entity Focus coherence score |
 | **Status** | Overall optimization level with color indicator |
-
-### Reading Chunk Analyses
-
-Each chunk analysis contains:
-
-1. **Score Summary**: Overall score, status, and breakdown by evaluator
-2. **Chunk Content**: The complete chunk text for context
-3. **Four Evaluator Sections**: Detailed analysis from each dimension
-
-#### Query-Answer Section Elements:
-- **Assessment**: Overall evaluation of query-answering capability
-- **Queries Evaluated**: 5 specific test queries with individual scores (0-100)
-- **Summary**: Average score and chunk type classification (Overview, Definition, Example, etc.)
-- **Strengths**: What the chunk does well
-- **Self-Containment Issues**: Missing context with point penalties
-
-#### LLM Rubric Section Elements:
-- **Assessment**: Overall quality evaluation
-- **Rubric Scores**: Four sub-scores:
-  - *Standalone Clarity*: How well it reads without context
-  - *Topic Focus*: Consistency and coherence of subject matter
-  - *Structure Quality*: Organization and flow
-  - *Content Size*: Appropriateness for chunk retrieval (100-512 tokens ideal)
-- **Issues Detected**: Specific problems found
-- **Key Recommendations**: Top 3 actionable improvements
-
-#### Structure Quality Section Elements:
-- **Assessment**: Overall structural effectiveness
-- **Structural Analysis**: Heading quality, scanability, information density scores
-- **Key Structural Elements**: Individual elements evaluated with scores:
-  - Headings, lists, tables, emphasis, code blocks, etc.
-  - Each scored 0-100 based on effectiveness for AI retrieval
-- **Optimization Suggestions**: Specific structural improvements
-
-#### Entity Focus Section Elements:
-- **Assessment**: Overall entity coherence evaluation
-- **Entity Analysis**:
-  - *Primary Topic*: Main subject identified
-  - *Topic Alignment*: How well entities support the topic (0-100)
-  - *Concrete Entity Ratio*: Percentage of specific vs. generic entities
-- **Top Entities by Relevance**: 5 most important entities with:
-  - ✓ = Concrete, specific entity (good for retrieval)
-  - ○ = Generic or abstract entity (less effective)
-  - Relevance percentage to chunk topic
-- **Missing Critical Entities**: Important entities that should be included
-- **Optimization Suggestions**: How to improve entity focus
 """
     
     def _format_evaluator_name(self, name: str) -> str:

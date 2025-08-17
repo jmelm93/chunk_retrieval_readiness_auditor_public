@@ -18,7 +18,7 @@ class ContentValidation(BaseModel):
         description="Brief explanation of the decision (max 50 chars)"
     )
     content_type: str = Field(
-        description="Type of content: content, navigation, links, form, boilerplate, footer_mixed, author_bio, site_navigation, too_short, heading_only, list_fragment, loading_message, breadcrumb"
+        description="Type of content: content, navigation, links, form, boilerplate, footer_mixed, author_bio, site_navigation, too_short, heading_only, list_fragment, loading_message, breadcrumb, code_heavy, quote_heavy, technical_snippet, mixed_code_quote"
     )
 
 
@@ -40,6 +40,10 @@ SKIP chunks that are primarily (should_analyze=false):
 - Site-wide navigation: Tools, Resources, Company, About us, Contact sections
 - Social media link collections
 - Copyright and legal text
+- Code-heavy chunks: >70% code blocks, inline code, or technical snippets
+- Quote-heavy chunks: >70% blockquotes, testimonials, or quoted content
+- Technical snippets: Pure code examples without explanatory text
+- Mixed code/quote: Combination of code and quotes with minimal prose
 
 ANALYZE chunks that contain (should_analyze=true):
 - Article content with substantive paragraphs (at least 3-4 sentences)
@@ -93,6 +97,36 @@ Examples to SKIP:
    VP of SEO for DEPT
    Expert in SEO, database engineering"
    -> author_bio, no article content
+
+5. "```python
+   from pydantic import BaseModel, Field
+   from typing import List
+   
+   class SubSection(BaseModel):
+       title: str = Field(..., description=\"Section title\")
+       content: List[str] = Field(default_factory=list)
+   ```
+   Basic usage with `Field()` configuration."
+   -> code_heavy, mostly code block with minimal explanation
+
+6. "> \"This tool completely changed our workflow. We're now 3x more efficient.\"
+   > - Sarah Johnson, Marketing Director
+   
+   > \"Best investment we've made this year. Highly recommend.\"  
+   > - Mike Chen, CTO
+   
+   > \"The support team is incredible. They solved our issue in minutes.\""
+   -> quote_heavy, primarily testimonials/quotes
+
+7. "Quick setup:
+   ```bash
+   npm install pydantic-ai
+   pip install openai
+   export OPENAI_API_KEY=your_key
+   ```
+   
+   Run with: `python main.py --config config.yaml`"
+   -> mixed_code_quote, commands and code without detailed explanation
 
 Examples to ANALYZE:
 
@@ -151,6 +185,12 @@ Evaluate this chunk:
         self.min_char_length = 150
         self.min_word_count = 20
         self.min_sentence_count = 2
+        # Code/Quote filtering thresholds
+        self.code_threshold = 0.7
+        self.quote_threshold = 0.7
+        self.combined_threshold = 0.8
+        self.min_prose_lines = 3
+        self.inline_code_density = 0.5
         
         if config and hasattr(config, 'filtering'):
             self.strict_filtering = getattr(config.filtering, 'strict_filtering', False)
@@ -158,6 +198,12 @@ Evaluate this chunk:
             self.min_char_length = getattr(config.filtering, 'min_char_length', 150)
             self.min_word_count = getattr(config.filtering, 'min_word_count', 20)
             self.min_sentence_count = getattr(config.filtering, 'min_sentence_count', 2)
+            # Load new code/quote thresholds
+            self.code_threshold = getattr(config.filtering, 'code_threshold', 0.7)
+            self.quote_threshold = getattr(config.filtering, 'quote_threshold', 0.7)
+            self.combined_threshold = getattr(config.filtering, 'combined_threshold', 0.8)
+            self.min_prose_lines = getattr(config.filtering, 'min_prose_lines', 3)
+            self.inline_code_density = getattr(config.filtering, 'inline_code_density', 0.5)
         
         logger.info(f"ContentValidator initialized with model: {self.model}, max_concurrent: {max_concurrent}, strict: {self.strict_filtering}, min_chars: {self.min_char_length}")
     
@@ -227,6 +273,172 @@ Evaluate this chunk:
         is_footer = confidence > self.boilerplate_threshold
         
         return is_footer, confidence, pattern_type
+    
+    def _detect_code_patterns(self, text: str) -> Tuple[float, float, int]:
+        """
+        Detect code patterns and calculate code density.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Tuple of (code_block_ratio, inline_code_ratio, total_code_lines)
+        """
+        lines = text.split('\n')
+        total_lines = len(lines)
+        total_chars = len(text)
+        
+        # Detect code blocks
+        code_block_patterns = [
+            r'^```[\w]*$',  # Markdown code blocks
+            r'<pre[^>]*>.*?</pre>',  # HTML pre tags
+            r'<code[^>]*>.*?</code>',  # HTML code tags (multiline)
+            r'^    \S',  # 4+ space indented code (common markdown convention)
+            r'^\t\S',    # Tab indented code
+        ]
+        
+        code_block_chars = 0
+        code_lines = 0
+        in_code_block = False
+        code_block_marker = None
+        
+        for line in lines:
+            line_stripped = line.strip()
+            
+            # Check for code block start/end
+            if re.match(r'^```', line_stripped):
+                if not in_code_block:
+                    in_code_block = True
+                    code_block_marker = '```'
+                elif code_block_marker == '```':
+                    in_code_block = False
+                    code_block_marker = None
+                code_lines += 1
+                code_block_chars += len(line)
+            elif in_code_block:
+                code_lines += 1
+                code_block_chars += len(line)
+            elif re.match(r'^    \S|^\t\S', line):  # Indented code
+                code_lines += 1
+                code_block_chars += len(line)
+            elif re.search(r'<pre[^>]*>|</pre>|<code[^>]*>|</code>', line):
+                code_lines += 1
+                code_block_chars += len(line)
+        
+        # Detect inline code
+        inline_code_patterns = [
+            r'`[^`\n]+`',  # Backtick inline code
+            r'<code[^>]*>[^<]+</code>',  # HTML inline code
+        ]
+        
+        inline_code_chars = 0
+        for pattern in inline_code_patterns:
+            matches = re.finditer(pattern, text)
+            for match in matches:
+                inline_code_chars += len(match.group())
+        
+        # Calculate ratios
+        code_block_ratio = code_block_chars / total_chars if total_chars > 0 else 0
+        inline_code_ratio = inline_code_chars / total_chars if total_chars > 0 else 0
+        
+        return code_block_ratio, inline_code_ratio, code_lines
+    
+    def _detect_quote_patterns(self, text: str) -> Tuple[float, int]:
+        """
+        Detect quote patterns and calculate quote density.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Tuple of (quote_ratio, quote_lines)
+        """
+        lines = text.split('\n')
+        total_lines = len(lines)
+        total_chars = len(text)
+        
+        quote_chars = 0
+        quote_lines = 0
+        
+        # Detect different types of quotes
+        quote_patterns = [
+            r'^>\s',  # Markdown blockquotes
+            r'<blockquote[^>]*>.*?</blockquote>',  # HTML blockquotes
+            r'^".*"$',  # Lines that are entirely quoted
+            r'^[\u2018\u2019].*[\u2018\u2019]$',  # Lines with curly quotes (Unicode)
+        ]
+        
+        # Check for blockquote blocks (> prefix)
+        for line in lines:
+            line_stripped = line.strip()
+            if re.match(r'^>\s', line_stripped):
+                quote_lines += 1
+                quote_chars += len(line)
+        
+        # Check for HTML blockquotes
+        blockquote_matches = re.finditer(r'<blockquote[^>]*>.*?</blockquote>', text, re.DOTALL)
+        for match in blockquote_matches:
+            quote_chars += len(match.group())
+            # Count lines within the blockquote
+            quote_content = match.group()
+            quote_lines += len(quote_content.split('\n'))
+        
+        # Detect testimonial/review patterns
+        testimonial_indicators = [
+            r'(?i)(testimonial|review|customer says|client feedback)',
+            r'(?i)"[^"]{20,200}"',  # Quoted text 20-200 chars (likely testimonials)
+            r'(?i)^["""][^"""]{10,}["""]$',  # Lines that are primarily quoted
+        ]
+        
+        for pattern in testimonial_indicators:
+            matches = re.finditer(pattern, text, re.MULTILINE)
+            for match in matches:
+                quote_chars += len(match.group())
+        
+        # Detect interview/dialogue patterns
+        dialogue_patterns = [
+            r'^[A-Z][^:]*:\s',  # Speaker: format
+            r'^Q:\s|^A:\s',     # Q: A: format
+            r'(?i)(interviewer|interviewee):\s',
+        ]
+        
+        for line in lines:
+            for pattern in dialogue_patterns:
+                if re.match(pattern, line.strip()):
+                    quote_lines += 1
+                    quote_chars += len(line)
+                    break
+        
+        # Calculate ratio
+        quote_ratio = quote_chars / total_chars if total_chars > 0 else 0
+        
+        return quote_ratio, quote_lines
+    
+    def _calculate_content_ratios(self, text: str) -> Tuple[float, float, float, int]:
+        """
+        Calculate content ratios for code, quotes, and prose.
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Tuple of (total_code_ratio, quote_ratio, prose_ratio, prose_lines)
+        """
+        # Get code patterns
+        code_block_ratio, inline_code_ratio, code_lines = self._detect_code_patterns(text)
+        total_code_ratio = code_block_ratio + inline_code_ratio
+        
+        # Get quote patterns
+        quote_ratio, quote_lines = self._detect_quote_patterns(text)
+        
+        # Calculate prose ratio (everything that isn't code or quotes)
+        prose_ratio = max(0, 1.0 - total_code_ratio - quote_ratio)
+        
+        # Count prose lines (total lines minus code/quote lines)
+        total_lines = len([l for l in text.split('\n') if l.strip()])
+        prose_lines = max(0, total_lines - code_lines - quote_lines)
+        
+        return total_code_ratio, quote_ratio, prose_ratio, prose_lines
     
     def _quick_content_check(self, text: str) -> Optional[ContentValidation]:
         """
@@ -343,6 +555,51 @@ Evaluate this chunk:
                     reason=f"Mostly {pattern_type} content",
                     content_type=f"{pattern_type}_mixed" if content_lines else pattern_type
                 )
+        
+        # 9. Check for code/quote heavy content
+        total_code_ratio, quote_ratio, prose_ratio, prose_lines = self._calculate_content_ratios(text)
+        
+        # Skip if code content exceeds threshold
+        if total_code_ratio > self.code_threshold:
+            return ContentValidation(
+                should_analyze=False,
+                reason=f"Code-heavy content ({int(total_code_ratio*100)}%)",
+                content_type="code_heavy"
+            )
+        
+        # Skip if quote content exceeds threshold
+        if quote_ratio > self.quote_threshold:
+            return ContentValidation(
+                should_analyze=False,
+                reason=f"Quote-heavy content ({int(quote_ratio*100)}%)",
+                content_type="quote_heavy"
+            )
+        
+        # Skip if combined code+quote content exceeds threshold
+        combined_ratio = total_code_ratio + quote_ratio
+        if combined_ratio > self.combined_threshold:
+            return ContentValidation(
+                should_analyze=False,
+                reason=f"Code+quote heavy ({int(combined_ratio*100)}%)",
+                content_type="mixed_code_quote"
+            )
+        
+        # Skip if insufficient prose lines
+        if prose_lines < self.min_prose_lines:
+            return ContentValidation(
+                should_analyze=False,
+                reason=f"Insufficient prose ({prose_lines} lines < {self.min_prose_lines})",
+                content_type="technical_snippet"
+            )
+        
+        # Check inline code density specifically
+        _, inline_code_ratio, _ = self._detect_code_patterns(text)
+        if inline_code_ratio > self.inline_code_density:
+            return ContentValidation(
+                should_analyze=False,
+                reason=f"High inline code density ({int(inline_code_ratio*100)}%)",
+                content_type="code_heavy"
+            )
         
         # Let AI decide for uncertain cases
         return None

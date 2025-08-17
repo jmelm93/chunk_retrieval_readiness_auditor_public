@@ -4,7 +4,7 @@ from .models import (
     MarkdownFormattable,
     FormattingOptions,
     StandardizedEvaluationResult,
-    ScoreBreakdownItem
+    # ScoreBreakdownItem
 )
 from .base_evaluator import BaseStructuredEvaluator
 
@@ -12,6 +12,6 @@ __all__ = [
     'MarkdownFormattable',
     'FormattingOptions',
     'StandardizedEvaluationResult',
-    'ScoreBreakdownItem',
+    # 'ScoreBreakdownItem',
     'BaseStructuredEvaluator'
 ]

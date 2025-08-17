@@ -98,6 +98,12 @@ class FilteringConfig:
     min_char_length: int = 150
     min_word_count: int = 20
     min_sentence_count: int = 2
+    # Code/Quote filtering thresholds
+    code_threshold: float = 0.7        # Skip if >70% code content
+    quote_threshold: float = 0.7       # Skip if >70% quoted content  
+    combined_threshold: float = 0.8    # Skip if >80% combined code+quotes
+    min_prose_lines: int = 3          # Minimum lines of actual prose
+    inline_code_density: float = 0.5  # Skip if >50% inline code by characters
 
 @dataclass
 class QueryAnswerConfig:

@@ -5,10 +5,10 @@ models:
   default: "gpt-5-mini"  # Default model for all LLM operations
   overrides: # Override specific models if needed. 
     content_preprocessing: "gpt-5-nano"
-    query_answer: "gpt-5"
-    # query_answer: "gpt-5-mini"
-    llm_rubric: "gpt-5"
-    # llm_rubric: "gpt-5-mini"
+    # query_answer: "gpt-5"
+    query_answer: "gpt-5-mini"
+    # llm_rubric: "gpt-5"
+    llm_rubric: "gpt-5-mini"
     entity_focus: "gpt-5-mini"  # Now uses OpenAI for AI-driven entity analysis
     structure_quality: "gpt-5-mini"  # Now uses OpenAI for AI-driven structure analysis
 
@@ -81,6 +81,13 @@ filtering:
   min_char_length: 150        # Minimum characters for meaningful chunk
   min_word_count: 20          # Minimum words (about 2-3 sentences)
   min_sentence_count: 2       # At least 2 complete sentences
+  
+  # Code/Quote filtering thresholds
+  code_threshold: 0.7         # Skip if >70% code content
+  quote_threshold: 0.7        # Skip if >70% quoted content
+  combined_threshold: 0.8     # Skip if >80% combined code+quotes
+  min_prose_lines: 3          # Minimum lines of actual prose content
+  inline_code_density: 0.5    # Skip if >50% inline code by characters
   
 reporting:
   include_metadata: true

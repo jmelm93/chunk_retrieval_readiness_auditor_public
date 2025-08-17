@@ -79,7 +79,7 @@ class StandardizedEvaluationResult(BaseModel, MarkdownFormattable):
     )
     
     overall_assessment: str = Field(
-        description="Clear and concise assessment - whatever length needed for clarity"
+        description="Clear and concise assessment."
     )
     
     # score_breakdown: Optional[Dict[str, ScoreBreakdownItem]] = Field(
@@ -116,7 +116,8 @@ class StandardizedEvaluationResult(BaseModel, MarkdownFormattable):
         lines = []
         
         # Score
-        lines.append(f"**Score:** {self.overall_score}/100")
+        lines.append("")
+        lines.append(f"⭐ **Score:** {self.overall_score}/100")
         lines.append("")
         
         # # Breakdown (if available)
@@ -126,9 +127,9 @@ class StandardizedEvaluationResult(BaseModel, MarkdownFormattable):
         #         lines.append(f"• {dimension}: {breakdown.score}/100 - {breakdown.explanation}")
         #     lines.append("")
         
-        # Score Reasoning
-        lines.append("**Score Reasoning:**")
-        lines.append("")
+        # # Score Reasoning
+        # lines.append("**Score Reasoning:**")
+        # lines.append("")
         
         # Overall Assessment
         lines.append("📋 **Overall Assessment:**")
