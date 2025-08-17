@@ -1,7 +1,7 @@
 """Essential base Pydantic models for V2 evaluators."""
 
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, List
 
 
 class EvidenceSpan(BaseModel):
@@ -69,3 +69,51 @@ class V2EvaluationMetadata(BaseModel):
     config_threshold: float = Field(
         description="Passing threshold used for this evaluation"
     )
+
+
+
+class MarkdownResult(BaseModel):
+    """Simplified result for markdown rendering compatibility."""
+    
+    overall_score: int = Field(ge=0, le=100)
+    overall_assessment: str
+    strengths: List[str]
+    issues: List[str] 
+    recommendations: List[str]
+    passing: bool
+    
+    def as_markdown(self) -> str:
+        """Generate markdown feedback for human consumption."""
+        lines = []
+        
+        # Score with pass/fail indicator
+        status_emoji = "✅" if self.passing else "❌"
+        lines.append("")
+        lines.append(f"⭐ **Score:** {self.overall_score}/100 {status_emoji}")
+        lines.append("")
+        
+        # Overall Assessment
+        lines.append("📋 **Overall Assessment:**")
+        lines.append(self.overall_assessment)
+        lines.append("")
+        
+        # Strengths
+        if self.strengths:
+            lines.append("✅ **Strengths:**")
+            for strength in self.strengths:
+                lines.append(f"- {strength}")
+            lines.append("")
+        
+        # Issues
+        if self.issues:
+            lines.append("⚠️ **Issues:**")
+            for issue in self.issues:
+                lines.append(f"- {issue}")
+            lines.append("")
+        
+        # Recommendations
+        lines.append("🎯 **Recommendations:**")
+        for recommendation in self.recommendations:
+            lines.append(f"- {recommendation}")
+        
+        return "\n".join(lines)

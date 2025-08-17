@@ -7,8 +7,8 @@ from loguru import logger
 from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator_v2 import BaseStructuredEvaluatorV2
-from ..base.models import V2EvaluationMetadata
-from .models import LLMRubricEval, LLMRubricMarkdownResult, BARRIER_GATES, DIMENSION_WEIGHTS
+from ..base.models import V2EvaluationMetadata, MarkdownResult
+from .models import LLMRubricEval, BARRIER_GATES, DIMENSION_WEIGHTS
 from .prompts import get_system_prompt, create_user_prompt
 
 
@@ -81,7 +81,7 @@ class LLMRubricEvaluatorV2(BaseStructuredEvaluatorV2):
         
         return standalone, structure, one_idea, right_size, gates_triggered
     
-    def _create_markdown_result(self, machine_result: LLMRubricEval) -> LLMRubricMarkdownResult:
+    def _create_markdown_result(self, machine_result: LLMRubricEval) -> MarkdownResult:
         """Convert machine result to markdown-compatible format.
         
         Args:
@@ -90,8 +90,7 @@ class LLMRubricEvaluatorV2(BaseStructuredEvaluatorV2):
         Returns:
             Markdown-compatible result
         """
-        return LLMRubricMarkdownResult(
-            evaluator_name=self.evaluator_name,
+        return MarkdownResult(
             overall_score=machine_result.overall_score,
             overall_assessment=machine_result.overall_assessment,
             strengths=machine_result.strengths,

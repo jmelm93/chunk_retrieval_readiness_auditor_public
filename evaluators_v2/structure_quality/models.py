@@ -71,47 +71,6 @@ class StructureEval(BaseModel):
         final_score = max(0, min(100, self.base_score - total_penalties))
         object.__setattr__(self, 'overall_score', final_score)
 
-
-class StructureMarkdownResult(BaseModel):
-    """Simplified result for markdown rendering compatibility."""
-    
-    evaluator_name: str = Field(default="Structure Quality")
-    overall_score: int = Field(ge=0, le=100)
-    overall_assessment: str
-    strengths: List[str]
-    recommendations: List[str]
-    passing: bool
-    
-    def as_markdown(self, options=None) -> str:
-        """Generate markdown feedback for human consumption."""
-        lines = []
-        
-        # Score with pass/fail indicator
-        status_emoji = "✅" if self.passing else "❌"
-        lines.append("")
-        lines.append(f"⭐ **Score:** {self.overall_score}/100 {status_emoji}")
-        lines.append("")
-        
-        # Overall Assessment
-        lines.append("📋 **Overall Assessment:**")
-        lines.append(self.overall_assessment)
-        lines.append("")
-        
-        # Strengths
-        if self.strengths:
-            lines.append("✅ **Strengths:**")
-            for strength in self.strengths:
-                lines.append(f"- {strength}")
-            lines.append("")
-        
-        # Recommendations
-        lines.append("🎯 **Recommendations:**")
-        for recommendation in self.recommendations:
-            lines.append(f"- {recommendation}")
-        
-        return "\n".join(lines)
-
-
 # # Structural categories for reference
 # STRUCTURAL_CATEGORIES = {
 #     "heading": {

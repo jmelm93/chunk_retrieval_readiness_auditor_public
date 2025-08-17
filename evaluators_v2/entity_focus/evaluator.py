@@ -7,8 +7,8 @@ from loguru import logger
 from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator_v2 import BaseStructuredEvaluatorV2
-from ..base.models import V2EvaluationMetadata
-from .models import EntityFocusEval, EntityFocusMarkdownResult, Entity, DIMENSION_WEIGHTS
+from ..base.models import V2EvaluationMetadata, MarkdownResult
+from .models import EntityFocusEval, Entity, DIMENSION_WEIGHTS
 from .prompts import get_system_prompt, create_user_prompt
 
 
@@ -72,7 +72,7 @@ class EntityFocusEvaluatorV2(BaseStructuredEvaluatorV2):
             "specificity_ratio": specificity_ratio
         }
     
-    def _create_markdown_result(self, machine_result: EntityFocusEval) -> EntityFocusMarkdownResult:
+    def _create_markdown_result(self, machine_result: EntityFocusEval) -> MarkdownResult:
         """Convert machine result to markdown-compatible format.
         
         Args:
@@ -81,8 +81,7 @@ class EntityFocusEvaluatorV2(BaseStructuredEvaluatorV2):
         Returns:
             Markdown-compatible result
         """
-        return EntityFocusMarkdownResult(
-            evaluator_name=self.evaluator_name,
+        return MarkdownResult(
             overall_score=machine_result.overall_score,
             overall_assessment=machine_result.overall_assessment,
             strengths=machine_result.strengths,
