@@ -10,15 +10,19 @@ MAX_HEADING_WORDS = 10
 # System prompt for structure quality evaluation
 SYSTEM_PROMPT = """You are an expert at evaluating content structure for AI retrieval systems.
 
+IMPORTANT: You are evaluating EXTRACTED WEB CONTENT as it appears after web scraping.
+You CANNOT restructure HTML or move elements to metadata - you evaluate the text as AI systems will see it.
+
 Your evaluation should:
 1. Assess heading quality and accuracy
-2. Evaluate structural element effectiveness
+2. Evaluate structural element effectiveness  
 3. Judge readability and scanability
-4. Identify structural issues and their impact
-5. Provide actionable improvement suggestions
+4. Identify ACTUAL structural issues (NOT extraction artifacts)
+5. Provide actionable improvement suggestions for CONTENT structure only
 
 Be thorough but fair. Focus on structural aspects that affect AI chunk retrieval.
-Remember that perfect HTML/Markdown isn't required - focus on whether the structure aids or hinders comprehension."""
+Remember that perfect HTML/Markdown isn't required - focus on whether the structure aids or hinders comprehension.
+DO NOT flag web page artifacts (author info, dates, social buttons) as structural issues."""
 
 
 def create_evaluation_prompt(chunk_text: str,
@@ -67,7 +71,34 @@ IMPORTANT CONSIDERATIONS:
 - Dense walls of text are problematic for retrieval
 - Clear introductory context improves chunk usability
 - Logical flow and organization matter for coherence
-- Inline artifacts (timestamps, share buttons) are NOT structural issues
+
+EXTRACTION ARTIFACTS TO IGNORE (NOT structural issues):
+- Author metadata: names, avatars, bios, "Written by", "By [Author]", author credentials
+- Timestamps and dates: "Published", "Updated on", "Last modified", publication dates
+- Social elements: "Share", "Tweet", "FacebookTwitterLinkedIn", share buttons
+- Engagement metrics: view counts, read times, "5 min read", "2.3k views", likes
+- Navigation: breadcrumbs, menu items, "Skip to content", category tags
+- Footer elements: copyright notices, privacy policy links, terms of service
+- CTAs: newsletter signups, "Subscribe", "Sign up", contact forms
+- Related content: "You may also like", recommended articles, "Related posts"
+- User interactions: comment sections, "Leave a reply", rating widgets
+- Media elements: decorative images, author photos, hero images, avatars
+
+CRITICAL: These appear because we evaluate web content AS EXTRACTED. We CANNOT restructure HTML or move things to metadata blocks. We evaluate the text structure as AI systems will receive it.
+
+DO NOT:
+- Recommend converting inline metadata to separate metadata blocks
+- Flag author information as structural issues  
+- Penalize for decorative images or avatars
+- Suggest HTML/DOM restructuring or metadata extraction
+- Recommend removing standard web page elements
+
+FOCUS ON:
+- How headings organize the actual content
+- Whether paragraphs are well-structured
+- If lists and tables are used effectively for the content
+- The logical flow of information
+- Actual content structure issues (not web artifacts)
 
 STRUCTURAL ELEMENT GUIDELINES:
 - Heading: Should accurately describe content ({min_heading_words}-{max_heading_words} words ideal)
@@ -76,13 +107,22 @@ STRUCTURAL ELEMENT GUIDELINES:
 - Paragraphs: Should be reasonably sized, not too long or too short
 - Code blocks: Should be properly formatted if present
 
-SCORING GUIDELINES:
-- 80-100: Excellent structure that enhances content value and retrieval
-- 60-79: Good structure with minor improvements needed
-- 40-59: Moderate structural issues affecting usability
-- 0-39: Poor structure that significantly hinders chunk quality
+NOTE: Only evaluate these elements for the MAIN CONTENT. Ignore structural aspects of:
+- Author bylines and bios
+- Publication metadata
+- Navigation menus
+- Social sharing widgets
+- Footer content
+- Related article sections
 
-Focus on how structure affects AI chunk retrieval effectiveness."""
+SCORING GUIDELINES:
+- 80-100: Excellent CONTENT structure that enhances value and retrieval
+- 60-79: Good CONTENT structure with minor improvements needed
+- 40-59: Moderate CONTENT structural issues affecting usability
+- 0-39: Poor CONTENT structure that significantly hinders chunk quality
+
+Remember: Evaluate the structure of the ACTUAL CONTENT, not the presence of standard web page elements.
+Focus on how the CONTENT structure affects AI chunk retrieval effectiveness."""
     
     return prompt
 
