@@ -5,14 +5,14 @@ models:
   default: "gpt-5-mini"  # Default model for all LLM operations
   overrides: # Override specific models if needed. 
     content_preprocessing: "gpt-5-nano"
-    # query_answer: "gpt-5-mini"
-    # llm_rubric: "gpt-5-mini"
-    # entity_focus: "gpt-5-mini"  
-    # structure_quality: "gpt-5-mini" 
-    query_answer: "gpt-5"
-    llm_rubric: "gpt-5"
-    entity_focus: "gpt-5"  
-    structure_quality: "gpt-5" 
+    query_answer: "gpt-5-mini"
+    llm_rubric: "gpt-5-mini"
+    entity_focus: "gpt-5-mini"  
+    structure_quality: "gpt-5-mini" 
+    # query_answer: "gpt-5"
+    # llm_rubric: "gpt-5"
+    # entity_focus: "gpt-5"  
+    # structure_quality: "gpt-5" 
 
 
 chunking:

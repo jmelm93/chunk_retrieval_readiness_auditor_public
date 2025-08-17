@@ -111,7 +111,6 @@ class LLMRubricEvaluatorV2(BaseStructuredEvaluatorV2):
             Minimal LLMRubricEval result
         """
         return LLMRubricEval(
-            evaluator_name=self.evaluator_name,
             standalone=0,
             one_idea=0,
             structure=0,
@@ -184,8 +183,7 @@ class LLMRubricEvaluatorV2(BaseStructuredEvaluatorV2):
                 processed_text
             )
         
-        # Ensure evaluator name and passing threshold are correct
-        machine_result.evaluator_name = self.evaluator_name
+        # Ensure passing threshold is correct
         machine_result.passing = self.apply_passing_threshold(machine_result.overall_score)
         
         # Calculate processing time

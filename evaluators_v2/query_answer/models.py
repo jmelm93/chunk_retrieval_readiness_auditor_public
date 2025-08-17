@@ -1,8 +1,8 @@
 """Query-Answer V2 evaluator models with structured penalties and evidence tracking."""
 
-from pydantic import BaseModel, Field
-from typing import List, Literal, Dict, Any
-from ..base.models import BaseEvaluationResult, EvidenceSpan
+from pydantic import BaseModel, Field, ConfigDict
+from typing import List, Literal, Any
+from ..base.models import EvidenceSpan
 
 
 class Penalty(BaseModel):
@@ -28,62 +28,37 @@ class Penalty(BaseModel):
         description="Points deducted: minor=5, moderate=10, severe=15"
     )
     
-    evidence_spans: List[str] = Field(
-        description="1-3 short verbatim excerpts (≤15 words each) supporting this penalty"
-    )
+    evidence_spans: List[EvidenceSpan] = Field(description="1-3 short verbatim excerpts (≤15 words each) supporting this penalty")
 
 
-class QueryAnswerEval(BaseEvaluationResult):
-    """Machine-readable result for Query-Answer Completeness evaluator.
+class QueryAnswerEval(BaseModel):
+    """Query-Answer Completeness evaluator result.
     
-    This model captures the detailed algorithmic evaluation process including
-    chunk classification, penalty tracking, quality gates, and evidence spans.
+    Standalone model for OpenAI structured outputs compatibility.
+    All fields are explicitly required per OpenAI's schema validation.
     """
     
-    chunk_type: Literal["overview", "detail", "example", "definition", "general"] = Field(
-        description="Classification of the chunk type based on content analysis"
-    )
+    model_config = ConfigDict(extra='forbid')
     
-    likely_queries: List[str] = Field(
-        min_items=3,
-        max_items=8,
-        description="3-8 likely user queries this chunk could help answer"
-    )
+    # Base evaluator fields (duplicated for standalone compatibility)
+    overall_score: int = Field(ge=0, le=100, description="Overall score from 0-100")
+    overall_assessment: str = Field(description="Clear and concise assessment (2-4 sentences)")
+    strengths: List[str] = Field(description="Key strengths identified by the evaluator")
+    issues: List[str] = Field(description="Key issues identified by the evaluator")
+    recommendations: List[str] = Field(description="Specific actionable recommendations")
+    passing: bool = Field(description="Whether evaluation passed the evaluator's threshold")
     
-    penalties: List[Penalty] = Field(
-        description="List of AI retrieval barriers detected with evidence"
-    )
+    # Query-Answer specific fields
+    chunk_type: Literal["overview", "detail", "example", "definition", "general"] = Field(description="Classification of the chunk type based on content analysis")
+    likely_queries: List[str] = Field(description="3-8 likely user queries this chunk could help answer")
+    penalties: List[Penalty] = Field(description="List of AI retrieval barriers detected with evidence")
+    penalties_total: int = Field(ge=0, le=90, description="Total penalty points applied (sum of all penalties, capped at 90)")
+    quality_caps_applied: List[str] = Field(description="List of quality gates that limited the maximum possible score")
     
-    penalties_total: int = Field(
-        ge=0, le=90,
-        description="Total penalty points applied (sum of all penalties, capped at 90)"
-    )
-    
-    quality_caps_applied: List[str] = Field(
-        description="List of quality gates that limited the maximum possible score"
-    )
-    
-    # Scoring breakdown for auditability
-    base_score: int = Field(
-        default=100,
-        description="Starting score before penalties (always 100)"
-    )
-    
-    provisional_score: int = Field(
-        ge=0, le=100,
-        description="Score after applying penalties but before quality caps"
-    )
-    
-    final_score: int = Field(
-        ge=0, le=100,
-        description="Final score after applying both penalties and quality caps"
-    )
-    
-    # Override overall_score to use final_score
-    overall_score: int = Field(
-        ge=0, le=100,
-        description="Final score (same as final_score for consistency)"
-    )
+    # Scoring breakdown for auditability (no defaults for OpenAI compatibility)
+    base_score: int = Field(description="Starting score before penalties (always 100)")
+    provisional_score: int = Field(ge=0, le=100, description="Score after applying penalties but before quality caps")
+    final_score: int = Field(ge=0, le=100, description="Final score after applying both penalties and quality caps")
     
     def model_post_init(self, __context: Any) -> None:
         """Ensure overall_score matches final_score for consistency."""

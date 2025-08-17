@@ -33,43 +33,6 @@ class EntityFocusEvaluatorV2(BaseStructuredEvaluatorV2):
         super().__init__(**kwargs)
         logger.info(f"{self.evaluator_name} V2 initialized with threshold {self.passing_threshold}")
     
-    def _validate_entities(self, entities: List[Entity], text: str) -> List[Entity]:
-        """Validate and fix entity positions if needed.
-        
-        Args:
-            entities: List of extracted entities
-            text: Original text for validation
-            
-        Returns:
-            List of validated entities
-        """
-        validated = []
-        text_length = len(text)
-        
-        for entity in entities:
-            # Check if positions are valid
-            if entity.start < 0 or entity.end > text_length or entity.start >= entity.end:
-                logger.warning(f"Invalid entity positions for '{entity.text}': {entity.start}-{entity.end}")
-                # Try to find the entity in the text
-                start_pos = text.find(entity.text)
-                if start_pos != -1:
-                    entity.start = start_pos
-                    entity.end = start_pos + len(entity.text)
-                else:
-                    # Skip this entity if we can't find it
-                    logger.warning(f"Could not locate entity '{entity.text}' in text")
-                    continue
-            
-            # Validate that the text matches the extracted span
-            extracted_span = text[entity.start:entity.end]
-            if extracted_span != entity.text:
-                logger.warning(f"Entity text mismatch: '{entity.text}' vs '{extracted_span}'")
-                # Use the actual span from the text
-                entity.text = extracted_span
-            
-            validated.append(entity)
-        
-        return validated
     
     def _analyze_entity_distribution(self, entities: List[Entity]) -> Dict[str, Any]:
         """Analyze the distribution of entity types and specificity.
@@ -139,7 +102,6 @@ class EntityFocusEvaluatorV2(BaseStructuredEvaluatorV2):
             Minimal EntityFocusEval result
         """
         return EntityFocusEval(
-            evaluator_name=self.evaluator_name,
             primary_topic="Unknown (evaluation failed)",
             entities=[],
             alignment=0,
@@ -203,9 +165,6 @@ class EntityFocusEvaluatorV2(BaseStructuredEvaluatorV2):
                 processed_text
             )
             retry_count = 2  # Indicate max retries were used
-        else:
-            # Validate and fix entity positions
-            machine_result.entities = self._validate_entities(machine_result.entities, processed_text)
         
         # Validate the result
         if not self.validate_evaluation_result(machine_result):
@@ -215,8 +174,7 @@ class EntityFocusEvaluatorV2(BaseStructuredEvaluatorV2):
                 processed_text
             )
         
-        # Ensure evaluator name and passing threshold are correct
-        machine_result.evaluator_name = self.evaluator_name
+        # Ensure passing threshold is correct
         machine_result.passing = self.apply_passing_threshold(machine_result.overall_score)
         
         # Calculate processing time

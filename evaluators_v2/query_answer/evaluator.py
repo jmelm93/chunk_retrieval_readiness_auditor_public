@@ -7,7 +7,7 @@ from loguru import logger
 from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator_v2 import BaseStructuredEvaluatorV2
-from ..base.models import BaseEvaluationResult, V2EvaluationMetadata
+from ..base.models import V2EvaluationMetadata
 from .models import QueryAnswerEval, QueryAnswerMarkdownResult, QUALITY_GATES
 from .prompts import get_system_prompt, create_user_prompt
 
@@ -109,7 +109,6 @@ class QueryAnswerEvaluatorV2(BaseStructuredEvaluatorV2):
             Minimal QueryAnswerEval result
         """
         return QueryAnswerEval(
-            evaluator_name=self.evaluator_name,
             chunk_type="general",
             likely_queries=["Error: Could not analyze queries"],
             penalties=[],
@@ -183,8 +182,7 @@ class QueryAnswerEvaluatorV2(BaseStructuredEvaluatorV2):
                 processed_text  
             )
         
-        # Ensure evaluator name and passing threshold are correct
-        machine_result.evaluator_name = self.evaluator_name
+        # Ensure passing threshold is correct
         machine_result.passing = self.apply_passing_threshold(machine_result.overall_score)
         
         # Calculate processing time

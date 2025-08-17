@@ -1,54 +1,39 @@
 """LLM Rubric V2 evaluator models with dimensional scoring and barrier gates."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Dict, List, Any
-from ..base.models import BaseEvaluationResult
+from ..base.models import EvidenceSpan
 
-
-class LLMRubricEval(BaseEvaluationResult):
+class LLMRubricEval(BaseModel):
     """LLM Rubric Quality evaluator result with dimensional scoring.
     
-    Extends BaseEvaluationResult with dimensional scores, barrier detection,
-    and evidence spans for comprehensive evaluation tracking.
+    Standalone model for OpenAI structured outputs compatibility.
+    All fields are explicitly required per OpenAI's schema validation.
     """
     
+    model_config = ConfigDict(extra='forbid')
+    
+    # Base evaluator fields (duplicated for standalone compatibility)
+    overall_score: int = Field(description="Overall score from 0-100")
+    overall_assessment: str = Field(description="Clear and concise assessment (2-4 sentences)")
+    strengths: List[str] = Field(description="Key strengths identified by the evaluator")
+    issues: List[str] = Field(description="Key issues identified by the evaluator")
+    recommendations: List[str] = Field(description="Specific actionable recommendations")
+    passing: bool = Field(description="Whether evaluation passed the evaluator's threshold")
+    
     # Dimensional scores (0-100 each)
-    standalone: int = Field(
-        ge=0, le=100,
-        description="Comprehensible without external context (0-100)"
-    )
-    
-    one_idea: int = Field(
-        ge=0, le=100,
-        description="Single clear focus, no topic drift (0-100)"
-    )
-    
-    structure: int = Field(
-        ge=0, le=100,
-        description="Scannable with paragraphs/lists/tables/code as needed (0-100)"
-    )
-    
-    right_size: int = Field(
-        ge=0, le=100,
-        description="Appropriate scope for target token range (0-100)"
-    )
-    
-    # Barrier detection and gates
-    gates_triggered: List[str] = Field(
-        default_factory=list,
-        description="List of barriers that applied score caps (e.g., 'vague_refs', 'wall_of_text')"
-    )
-    
-    evidence_spans: Dict[str, List[str]] = Field(
-        default_factory=dict,
-        description="Dictionary mapping barrier types to evidence text spans"
-    )
-    
+    standalone: int = Field(description="Comprehensible without external context (0-100)")
+    one_idea: int = Field(description="Single clear focus, no topic drift (0-100)")
+    structure: int = Field(description="Scannable with paragraphs/lists/tables/code as needed (0-100)")
+    right_size: int = Field(description="Appropriate scope for target token range (0-100)")
+
+    # Barrier detection and gates (no defaults for OpenAI compatibility)
+    gates_triggered: List[str] = Field(description="List of barriers that applied score caps (e.g., 'vague_refs', 'wall_of_text')")
+    evidence_spans: List[EvidenceSpan] = Field(description="List of evidence spans supporting the evaluation")
+
     # Scoring calculation details for auditability
-    weighted_score: float = Field(
-        description="Raw weighted score before rounding: 0.4*standalone + 0.3*structure + 0.2*one_idea + 0.1*right_size"
-    )
-    
+    weighted_score: float = Field(description="Raw weighted score before rounding: 0.4*standalone + 0.3*structure + 0.2*one_idea + 0.1*right_size")
+
     def model_post_init(self, __context: Any) -> None:
         """Calculate weighted score and overall score."""
         # Calculate weighted score

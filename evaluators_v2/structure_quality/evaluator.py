@@ -102,7 +102,6 @@ class StructureQualityEvaluatorV2(BaseStructuredEvaluatorV2):
             Markdown-compatible result
         """
         return StructureMarkdownResult(
-            evaluator_name=self.evaluator_name,
             overall_score=machine_result.overall_score,
             overall_assessment=machine_result.overall_assessment,
             strengths=machine_result.strengths,
@@ -121,13 +120,13 @@ class StructureQualityEvaluatorV2(BaseStructuredEvaluatorV2):
             Minimal StructureEval result
         """
         return StructureEval(
-            evaluator_name=self.evaluator_name,
-            issues=[],
+            structural_issues=[],
             base_score=100,
             total_penalties=0,
             overall_score=0,
             overall_assessment=f"Evaluation failed: {error_msg}",
             strengths=[],
+            issues=[],
             recommendations=["Retry evaluation or check chunk content format"],
             passing=False
         )
@@ -193,7 +192,7 @@ class StructureQualityEvaluatorV2(BaseStructuredEvaluatorV2):
             retry_count = 2  # Indicate max retries were used
         else:
             # Validate and fix structural issues
-            machine_result.issues = self._validate_structural_issues(machine_result.issues)
+            machine_result.structural_issues = self._validate_structural_issues(machine_result.structural_issues)
         
         # Validate the result
         if not self.validate_evaluation_result(machine_result):
@@ -203,8 +202,7 @@ class StructureQualityEvaluatorV2(BaseStructuredEvaluatorV2):
                 processed_content
             )
         
-        # Ensure evaluator name and passing threshold are correct
-        machine_result.evaluator_name = self.evaluator_name
+        # Ensure passing threshold is correct
         machine_result.passing = self.apply_passing_threshold(machine_result.overall_score)
         
         # Calculate processing time
@@ -244,7 +242,7 @@ class StructureQualityEvaluatorV2(BaseStructuredEvaluatorV2):
         Returns:
             Dictionary with structural analysis
         """
-        breakdown = self._analyze_structure_breakdown(result.issues)
+        breakdown = self._analyze_structure_breakdown(result.structural_issues)
         
         return {
             "scoring": {
@@ -260,7 +258,7 @@ class StructureQualityEvaluatorV2(BaseStructuredEvaluatorV2):
                     "penalty": issue.points,
                     "evidence": issue.evidence_spans
                 }
-                for issue in result.issues
+                for issue in result.structural_issues
             ],
             "categories_evaluated": [
                 "heading", "paragraphs", "lists", "tables", "code", "flow"
