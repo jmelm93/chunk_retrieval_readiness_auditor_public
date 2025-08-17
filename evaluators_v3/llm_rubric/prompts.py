@@ -2,7 +2,6 @@
 
 from utils.text_converter import load_ignore_artifacts
 
-
 def get_system_prompt() -> str:
     """Get the procedural system prompt for LLM Rubric V3 evaluation.
     
@@ -35,6 +34,11 @@ A. Detect barriers and create issues list:
    - too_short: Under 100 tokens
    - too_long: Over 600 tokens
    For each issue: set barrier_type, severity (minor/moderate/severe), description, evidence
+   Severity guidelines:
+   * Minor: Small imperfections that don't affect understanding
+   * Moderate: Noticeable issues but content remains useful
+   * Severe: Major barriers that significantly impact retrieval
+   Note: Be balanced - content can be good without being perfect
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List strengths related to AI accessibility (clear structure, self-contained, focused topic, etc.)
@@ -43,16 +47,16 @@ STEP 3 - SYNTHESIZE ASSESSMENT:
 C. Write overall assessment about chunk's AI retrieval readiness
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List specific improvements for AI accessibility
+D. For each improvement needed, create a structured recommendation. Order output by impact. Only include medium+ impact items unless chunk scores >80
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
 E. Apply scoring based on issues:
-   - Start at 90 (good content baseline)
-   - Deduct: minor -8, moderate -15, severe -25 per issue
+   - Start at 95 (excellent baseline)
+   - Deduct: minor -5, moderate -10, severe -20 per issue
    - Apply caps:
-     * Any severe issue → cap at 50
-     * 3+ moderate issues → cap at 65
-   - Excellence bonus: +10 if no issues (can reach 100)
+     * Any severe issue → cap at 65
+     * 3+ moderate issues → cap at 75
+   - Perfect content: Score = 100 if no issues
    - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:

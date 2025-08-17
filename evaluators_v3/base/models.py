@@ -25,6 +25,39 @@ class Issue(BaseModel):
     )
 
 
+class Recommendation(BaseModel):
+    """Structured recommendation for chunk optimization."""
+    
+    action: str = Field(
+        description="Specific action to improve chunk (e.g., 'Add citation for the 95% recovery claim')"
+    )
+    
+    category: Literal[
+        "citation_needed",      # Add sources for claims
+        "definition_needed",     # Define vague terms
+        "structure_improvement", # Fix formatting/organization  
+        "clarity_enhancement",   # Remove vague references
+        "entity_enrichment",     # Add specific entities
+        "context_bridge",        # Add contextual setup
+        "frontload_content"      # Move key info to beginning
+    ] = Field(
+        description="Category of improvement for grouping similar fixes"
+    )
+    
+    impact: Literal["critical", "high", "medium", "low"] = Field(
+        description="Expected impact on AI retrievability (critical=fixes severe barriers, high=major improvement, medium=noticeable help, low=minor enhancement)"
+    )
+    
+    confidence: Literal["certain", "likely", "possible"] = Field(
+        description="Confidence this fix will improve retrieval (certain=clear barrier, likely=probable improvement, possible=may help)"
+    )
+    
+    example: Optional[str] = Field(
+        default=None,
+        description="Optional example of how to implement (e.g., 'Add: according to Smith et al. 2023')"
+    )
+
+
 class BaseEvaluationResult(BaseModel):
     """Base result for all V3 evaluators with chain-of-thought field ordering.
     
@@ -52,8 +85,8 @@ class BaseEvaluationResult(BaseModel):
         description="Overall assessment summarizing the evaluation (1-4 sentences)"
     )
     
-    recommendations: List[str] = Field(
-        description="Specific actionable improvements. If no changes are required, notate 'N/A - Chunk is optimal' (do not force recommendations)"
+    recommendations: List[Recommendation] = Field(
+        description="Prioritized improvements ordered by impact (critical→high→medium). Only include medium+ impact items. Empty list if chunk is optimal - do not force recommendations."
     )
     
     # 3. SCORING PHASE - Final scoring based on analysis
@@ -98,11 +131,53 @@ class BaseEvaluationResult(BaseModel):
                     lines.append(f"  > \"{issue.evidence}\"")
             lines.append("")
         
-        # Recommendations
+        # Recommendations (grouped by impact)
         if self.recommendations:
             lines.append("🎯 **Recommendations:**")
-            for rec in self.recommendations:
-                lines.append(f"- {rec}")
+            
+            # Group recommendations by impact level
+            critical_recs = [r for r in self.recommendations if r.impact == "critical"]
+            high_recs = [r for r in self.recommendations if r.impact == "high"]
+            medium_recs = [r for r in self.recommendations if r.impact == "medium"]
+            
+            # Category icons
+            category_icons = {
+                "citation_needed": "📝",
+                "definition_needed": "🔤",
+                "structure_improvement": "📋",
+                "clarity_enhancement": "🔍",
+                "entity_enrichment": "🏷️",
+                "context_bridge": "🔗",
+                "frontload_content": "⬆️"
+            }
+            
+            # Display by impact level
+            if critical_recs:
+                lines.append("")
+                lines.append("**🔴 Critical Impact** (Must Fix):")
+                for rec in critical_recs:
+                    icon = category_icons.get(rec.category, "•")
+                    lines.append(f"- {icon} {rec.action}")
+                    if rec.example:
+                        lines.append(f"  → Example: {rec.example}")
+            
+            if high_recs:
+                lines.append("")
+                lines.append("**🟠 High Impact**:")
+                for rec in high_recs:
+                    icon = category_icons.get(rec.category, "•")
+                    lines.append(f"- {icon} {rec.action}")
+                    if rec.example:
+                        lines.append(f"  → Example: {rec.example}")
+            
+            if medium_recs:
+                lines.append("")
+                lines.append("**🟡 Medium Impact**:")
+                for rec in medium_recs:
+                    icon = category_icons.get(rec.category, "•")
+                    lines.append(f"- {icon} {rec.action}")
+                    if rec.example:
+                        lines.append(f"  → Example: {rec.example}")
         
         return "\n".join(lines)
     

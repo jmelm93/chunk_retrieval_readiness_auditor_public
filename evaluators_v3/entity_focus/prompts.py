@@ -40,6 +40,11 @@ A. Analyze entity-related problems and create issues list:
    - Entity sprawl (too many unrelated entities)
    - Unclear entity relationships
    For each issue: set barrier_type, severity (minor/moderate/severe), description, evidence
+   Severity guidelines:
+   * Minor: Slight entity issues that don't impact understanding
+   * Moderate: Entity problems that reduce clarity somewhat
+   * Severe: Major entity issues that seriously impact coherence
+   Note: Be reasonable - not every chunk needs perfect entity coverage
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List entity-related strengths (good coverage, clear focus, specific entities, etc.)
@@ -48,16 +53,16 @@ STEP 3 - SYNTHESIZE ASSESSMENT:
 C. Write overall assessment about entity focus and coherence
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List specific improvements for entity clarity and focus
+D. For each improvement needed, create a structured recommendation. Order output by impact. Prioritize medium+ impact entity improvements
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
 E. Apply scoring based on issues:
-   - Start at 90 (good content baseline)
-   - Deduct: minor -8, moderate -15, severe -25 per issue
+   - Start at 95 (excellent baseline)
+   - Deduct: minor -5, moderate -10, severe -20 per issue
    - Apply caps:
-     * Any severe issue → cap at 50
-     * 3+ moderate issues → cap at 65
-   - Excellence bonus: +10 if no issues (can reach 100)
+     * Any severe issue → cap at 65
+     * 3+ moderate issues → cap at 75
+   - Perfect content: Score = 100 if no issues
    - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:

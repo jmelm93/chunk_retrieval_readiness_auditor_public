@@ -34,6 +34,7 @@ A. Check each structural element and create issues list:
    - Write clear description of the structural problem
    - Include evidence excerpt showing the issue
    Order issues by severity (severe → moderate → minor)
+   Note: Be balanced in assessment - content can have good structure without being perfect
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List structural strengths (clear headings, good formatting, logical flow, etc.)
@@ -42,16 +43,16 @@ STEP 3 - SYNTHESIZE ASSESSMENT:
 C. Write overall assessment about structural quality for RAG
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List specific structural improvements
+D. For each improvement needed, create a structured recommendation. Order output by impact.  Focus on medium+ impact structural improvements
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
 E. Apply scoring based on structural issues:
-   - Start at 90 (good content baseline)
-   - Deduct: minor -8, moderate -15, severe -25 per issue
+   - Start at 95 (excellent baseline)
+   - Deduct: minor -5, moderate -10, severe -20 per issue
    - Apply caps:
-     * Any severe issue → cap at 50
-     * 3+ moderate issues → cap at 65
-   - Excellence bonus: +10 if no issues (can reach 100)
+     * Any severe issue → cap at 65
+     * 3+ moderate issues → cap at 75
+   - Perfect content: Score = 100 if no issues
    - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:
@@ -130,5 +131,5 @@ STRUCTURAL_CATEGORIES = [
 SEVERITY_POINTS = {
     "minor": 5,
     "moderate": 10,
-    "severe": 15
+    "severe": 20
 }

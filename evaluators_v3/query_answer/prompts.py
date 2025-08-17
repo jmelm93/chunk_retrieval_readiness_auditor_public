@@ -32,9 +32,13 @@ A. Detect barriers and create issues list:
    For each barrier found (vague_refs, misleading_headers, wall_of_text, jargon, topic_confusion, contradictions):
    - Set barrier_type
    - Assign severity: minor | moderate | severe
+     * Minor: Small imperfections that don't block retrieval (slight vagueness, minor formatting issues)
+     * Moderate: Noticeable problems but content still usable (some unclear refs, structural issues)
+     * Severe: Significant barriers to retrieval (major confusion, contradictions, misleading content)
    - Write clear description
    - Include evidence excerpt (optional, max 100 chars)
    Order issues by severity (severe → moderate → minor)
+   Note: Be reasonable - not all imperfections are issues. Content can be good without being perfect
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List key strengths of the chunk
@@ -43,16 +47,16 @@ STEP 3 - SYNTHESIZE ASSESSMENT:
 C. Write overall assessment based on issues and strengths found
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List specific, actionable recommendations for improvement
+D. For each improvement needed, create a structured recommendation. Order output by impact. Exclude low impact unless chunk scores >80
 
 STEP 5 - CALCULATE SCORE (informed by prior analysis):
 E. Apply scoring based on issues identified:
-   - Start at 90 (good content baseline)
-   - Deduct: minor -8, moderate -15, severe -25 per issue
+   - Start at 95 (excellent baseline)
+   - Deduct: minor -5, moderate -10, severe -20 per issue
    - Apply caps:
-     * Any severe issue → cap at 50
-     * 3+ moderate issues → cap at 65
-   - Excellence bonus: +10 if no issues (can reach 100)
+     * Any severe issue → cap at 65
+     * 3+ moderate issues → cap at 75
+   - Perfect content: Score = 100 if no issues
    - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:
@@ -98,9 +102,9 @@ QUALITY_GATE_THRESHOLDS = {
 }
 
 PENALTY_POINTS = {
-    "minor": 8,
-    "moderate": 15,
-    "severe": 25
+    "minor": 5,
+    "moderate": 10,
+    "severe": 20
 }
 
 BARRIER_TYPES = [
