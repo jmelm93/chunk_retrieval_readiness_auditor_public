@@ -37,31 +37,30 @@ A. Detect barriers and create issues list:
    Order issues by severity (severe → moderate → minor)
 
 STEP 2 - IDENTIFY STRENGTHS:
-B. List 2-4 key strengths of the chunk
+B. List key strengths of the chunk
 
 STEP 3 - SYNTHESIZE ASSESSMENT:
-C. Write overall assessment (2-4 sentences) based on issues and strengths found
+C. Write overall assessment based on issues and strengths found
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List 2-3 specific, actionable recommendations for improvement
+D. List specific, actionable recommendations for improvement
 
 STEP 5 - CALCULATE SCORE (informed by prior analysis):
 E. Apply scoring based on issues identified:
-   - Start at 100
-   - Deduct: minor -5, moderate -10, severe -15 per issue
-   - Apply quality caps if triggered:
-     * Multiple vague refs (moderate/severe) → cap at 60
-     * Misleading headers (moderate/severe) → cap at 65  
-     * Wall of text (moderate/severe) → cap at 55
-     * Topic confusion (moderate/severe) → cap at 60
-   - Floor at 10
+   - Start at 80 (good baseline)
+   - Deduct: minor -10, moderate -20, severe -30 per issue
+   - Apply caps for severe issues:
+     * Any severe issue → cap at 40
+     * 2+ moderate issues → cap at 60
+   - Can earn up to +20 bonus for excellence (no issues + strong points)
+   - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:
 F. Set passing = true if score ≥ threshold (typically 75)
 
 STEP 7 - CHUNK METADATA:
 G. Set chunk_type from: overview | detail | example | definition | general
-H. List 3-8 likely_queries this chunk could answer
+H. List likely_queries this chunk could answer
 
 Rules:
 - Barriers dominate scoring; do not compensate with informativeness
@@ -92,16 +91,16 @@ CONTENT:
 
 # Reference constants for evaluator logic
 QUALITY_GATE_THRESHOLDS = {
-    "multiple_vague_references": 60,
-    "misleading_headers": 65,
-    "wall_of_text": 55,
-    "mixed_unrelated_topics": 60
+    "multiple_vague_references": 40,
+    "misleading_headers": 40,
+    "wall_of_text": 35,
+    "mixed_unrelated_topics": 40
 }
 
 PENALTY_POINTS = {
-    "minor": 5,
-    "moderate": 10,
-    "severe": 15
+    "minor": 10,
+    "moderate": 20,
+    "severe": 30
 }
 
 BARRIER_TYPES = [

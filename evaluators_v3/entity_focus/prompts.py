@@ -42,20 +42,23 @@ A. Analyze entity-related problems and create issues list:
    For each issue: set barrier_type, severity (minor/moderate/severe), description, evidence
 
 STEP 2 - IDENTIFY STRENGTHS:
-B. List 2-4 entity-related strengths (good coverage, clear focus, specific entities, etc.)
+B. List entity-related strengths (good coverage, clear focus, specific entities, etc.)
 
 STEP 3 - SYNTHESIZE ASSESSMENT:
-C. Write overall assessment (2-4 sentences) about entity focus and coherence
+C. Write overall assessment about entity focus and coherence
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List 2-3 specific improvements for entity clarity and focus
+D. List specific improvements for entity clarity and focus
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
 E. Apply scoring based on issues:
-   - Start at 100
-   - Deduct: minor -5, moderate -10, severe -15 per issue
-   - Consider entity alignment (50%), specificity (30%), coverage (20%)
-   - Floor at 10
+   - Start at 80 (good baseline)
+   - Deduct: minor -10, moderate -20, severe -30 per issue
+   - Apply caps for severe issues:
+     * Any severe issue → cap at 40
+     * 2+ moderate issues → cap at 60
+   - Can earn up to +20 bonus for excellence (no issues + strong points)
+   - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:
 F. Set passing = true if score ≥ threshold (typically 70)

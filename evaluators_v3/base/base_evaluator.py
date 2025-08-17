@@ -252,20 +252,34 @@ class BaseStructuredEvaluatorV3(BaseEvaluator, ABC):
         Returns:
             Score from 0-100
         """
-        score = 100  # Start at 100
+        score = 80  # Start at 80 (good baseline)
+        
+        severe_count = 0
+        moderate_count = 0
         
         for issue in issues:
             severity = issue.severity if hasattr(issue, 'severity') else issue.get('severity', 'minor')
             
             if severity == "minor":
-                score -= 5
-            elif severity == "moderate":
                 score -= 10
+            elif severity == "moderate":
+                score -= 20
+                moderate_count += 1
             elif severity == "severe":
-                score -= 15
+                score -= 30
+                severe_count += 1
         
-        # Floor at 10
-        return max(10, score)
+        # Apply caps
+        if severe_count > 0:
+            score = min(score, 40)
+        elif moderate_count >= 2:
+            score = min(score, 60)
+        
+        # Allow excellence bonus (handled by evaluator if no issues)
+        if len(issues) == 0:
+            score = min(score + 20, 100)  # Can reach 100 if excellent
+        
+        return max(score, 10)  # Floor at 10
     
     def _get_prompts(self) -> Dict[str, Any]:
         """Return prompts used by this evaluator.

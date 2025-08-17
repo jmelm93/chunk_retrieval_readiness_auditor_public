@@ -5,10 +5,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class Issue(BaseModel):
-    """Represents a single issue/barrier found during evaluation.
-    
-    Simplified from V2: No complex evidence spans, just simple fields.
-    """
+    """Represents a single issue/barrier found during evaluation."""
     
     barrier_type: str = Field(
         description="Type of barrier detected (e.g., 'vague_refs', 'wall_of_text')"
@@ -52,11 +49,11 @@ class BaseEvaluationResult(BaseModel):
     
     # 2. SYNTHESIS PHASE - Synthesize findings into assessment
     assessment: str = Field(
-        description="Overall assessment summarizing the evaluation (2-4 sentences)"
+        description="Overall assessment summarizing the evaluation (1-4 sentences)"
     )
     
     recommendations: List[str] = Field(
-        description="Specific actionable improvements (2-3 items)"
+        description="Specific actionable improvements. If no changes are required, notate 'N/A - Chunk is optimal' (do not force recommendations)"
     )
     
     # 3. SCORING PHASE - Final scoring based on analysis

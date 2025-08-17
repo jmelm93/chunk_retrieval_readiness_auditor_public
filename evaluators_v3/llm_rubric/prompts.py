@@ -37,24 +37,23 @@ A. Detect barriers and create issues list:
    For each issue: set barrier_type, severity (minor/moderate/severe), description, evidence
 
 STEP 2 - IDENTIFY STRENGTHS:
-B. List 2-4 strengths related to AI accessibility (clear structure, self-contained, focused topic, etc.)
+B. List strengths related to AI accessibility (clear structure, self-contained, focused topic, etc.)
 
 STEP 3 - SYNTHESIZE ASSESSMENT:
-C. Write overall assessment (2-4 sentences) about chunk's AI retrieval readiness
+C. Write overall assessment about chunk's AI retrieval readiness
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List 2-3 specific improvements for AI accessibility
+D. List specific improvements for AI accessibility
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
-E. Apply scoring based on issues and dimensional analysis:
-   - Start at 100
-   - Deduct: minor -5, moderate -10, severe -15 per issue
-   - Apply barrier gates:
-     * vague_refs detected → cap standalone dimension at 40
-     * wall_of_text → cap structure dimension at 35
-     * topic_confusion → cap one_idea dimension at 35
-   - Weight dimensions: 40% standalone + 30% structure + 20% one_idea + 10% right_size
-   - Floor at 10
+E. Apply scoring based on issues:
+   - Start at 80 (good baseline)
+   - Deduct: minor -10, moderate -20, severe -30 per issue
+   - Apply caps for severe issues:
+     * Any severe issue → cap at 40
+     * 2+ moderate issues → cap at 60
+   - Can earn up to +20 bonus for excellence (no issues + strong points)
+   - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:
 F. Set passing = true if score ≥ threshold (typically 70)

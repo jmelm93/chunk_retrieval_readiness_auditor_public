@@ -36,19 +36,23 @@ A. Check each structural element and create issues list:
    Order issues by severity (severe → moderate → minor)
 
 STEP 2 - IDENTIFY STRENGTHS:
-B. List 2-4 structural strengths (clear headings, good formatting, logical flow, etc.)
+B. List structural strengths (clear headings, good formatting, logical flow, etc.)
 
 STEP 3 - SYNTHESIZE ASSESSMENT:
-C. Write overall assessment (2-4 sentences) about structural quality for RAG
+C. Write overall assessment about structural quality for RAG
 
 STEP 4 - PROVIDE RECOMMENDATIONS:
-D. List 2-3 specific structural improvements
+D. List specific structural improvements
 
 STEP 5 - CALCULATE SCORE (informed by analysis):
 E. Apply scoring based on structural issues:
-   - Start at 100
-   - Deduct: minor -5, moderate -10, severe -15 per issue
-   - Floor at 10
+   - Start at 80 (good baseline)
+   - Deduct: minor -10, moderate -20, severe -30 per issue
+   - Apply caps for severe issues:
+     * Any severe issue → cap at 40
+     * 2+ moderate issues → cap at 60
+   - Can earn up to +20 bonus for excellence (no issues + strong points)
+   - Final bounds: Max 100, Min 10
 
 STEP 6 - DETERMINE PASSING:
 F. Set passing = true if score ≥ threshold (typically 70)
