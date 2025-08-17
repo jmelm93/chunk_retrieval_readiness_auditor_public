@@ -147,9 +147,19 @@ python -m evals.runner --verbose          # Detailed output
 
 ### Modify Prompts
 
+**IMPORTANT**: Before modifying any prompts, review [GPT-5 Prompt Engineering Best Practices](CLAUDE_EVALUATORS_PROMPT_ENGINEERING.md) for current standards on structured outputs and prompt design.
+
 1. Edit relevant `evaluators/*/prompts.py`
-2. Run evals to verify behavior: `python -m evals.runner`
-3. Adjust expected scores if needed in `evals/test_cases/`
+2. Follow structured outputs best practices (see documentation above)
+3. Run evals to verify behavior: `python -m evals.runner`
+4. Adjust expected scores if needed in `evals/test_cases/`
+
+**Key Prompt Guidelines:**
+
+- Focus prompts on evaluation logic only, not output format
+- Let Pydantic Field descriptions handle all format requirements
+- End prompts with: "Provide structured data per schema"
+- Never include OUTPUT FORMAT sections in prompts
 
 ## Testing & Validation
 

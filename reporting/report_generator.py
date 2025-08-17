@@ -183,7 +183,7 @@ class EnhancedReportGenerator:
             except ImportError:
                 plain_text_content = result.text_preview
             
-            lines.append("**Full Content**:")
+            lines.append("**Chunk Content**:")
             lines.append(f"```\n{plain_text_content}\n```\n")
             
             # Feedback
@@ -478,7 +478,7 @@ The table provides a quick assessment of all chunks with clickable links:
 Each chunk analysis contains:
 
 1. **Score Summary**: Overall score, status, and breakdown by evaluator
-2. **Full Content**: The complete chunk text for context
+2. **Chunk Content**: The complete chunk text for context
 3. **Four Evaluator Sections**: Detailed analysis from each dimension
 
 #### Query-Answer Section Elements:

@@ -6,7 +6,7 @@ from loguru import logger
 from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator import BaseStructuredEvaluator
-from .models import EntityFocusResult
+from ..base.models import StandardizedEvaluationResult
 from .prompts import SYSTEM_PROMPT, create_evaluation_prompt
 
 
@@ -98,61 +98,22 @@ class EntityFocusEvaluator(BaseStructuredEvaluator):
         
         # Get structured evaluation from OpenAI
         result = await self.parse_structured_output(
-            response_model=EntityFocusResult,
+            response_model=StandardizedEvaluationResult,
             messages=messages
         )
         
         if not result:
             return self.create_empty_result("Failed to get evaluation from AI model")
         
-        # Calculate final score based on multiple factors
-        score_components = []
-        
-        # Overall focus score (45% weight - increased importance)
-        score_components.append(result.overall_focus_score * 0.45)
-        
-        # Topic alignment (35% weight - increased importance)
-        score_components.append(result.entity_coherence.topic_alignment_score * 0.35)
-        
-        # Concrete entity ratio (10% weight - reduced from 20%)
-        # More forgiving for chunks with abstract concepts
-        score_components.append(result.concrete_entity_ratio * 100 * 0.10)
-        
-        # Heading alignment bonus (10% weight)
-        if result.heading_entity_alignment:
-            score_components.append(10)
-        
-        # Reduced penalty for missing entities (from -5 to -2 per critical entity)
-        # And only apply if impact score is 8+ (not 7+)
-        if result.missing_entities:
-            critical_missing = sum(1 for e in result.missing_entities if e.impact_score >= 8)
-            score_components.append(-2 * critical_missing)
-        
-        # Add a baseline score boost to prevent extreme lows
-        # This acknowledges that having ANY entities is better than none
-        if len(result.extracted_entities) > 0:
-            score_components.append(5)  # Small boost for having entities
-        
-        final_score = max(0, min(100, sum(score_components)))
-        
-        # Update result with calculated score
-        result.score = int(final_score)
-        result.passing = final_score >= 60
-        
-        # Generate explanation
-        if final_score >= 75:
-            result.explanation = f"Strong entity focus on {result.entity_coherence.primary_topic} with {len(result.entity_relevance_evaluations)} relevant entities providing clear topical coherence"
-        elif final_score >= 60:
-            result.explanation = f"Good entity focus on {result.entity_coherence.primary_topic} but could benefit from more concrete, specific entities"
-        else:
-            result.explanation = f"Weak entity focus - needs more concrete entities and better alignment with {result.entity_coherence.primary_topic}"
+        # Update evaluator name and ensure passing threshold is correct
+        result.evaluator_name = self.evaluator_name
+        result.passing = result.overall_score >= 60
         
         # Create evaluation result
-        import json
         return EvaluationResult(
-            query=json.dumps(result.as_json_summary()),
+            query="",  # Not used in this context
             response="",
             passing=result.passing,
-            score=result.score / 100,  # Normalize to 0-1
+            score=result.overall_score / 100,  # Normalize to 0-1
             feedback=result.as_markdown()
         )

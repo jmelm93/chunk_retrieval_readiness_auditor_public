@@ -1,17 +1,17 @@
 """Base classes for evaluators v2."""
 
 from .models import (
-    BaseEvaluationResult,
-    BaseMetrics,
     MarkdownFormattable,
-    FormattingOptions
+    FormattingOptions,
+    StandardizedEvaluationResult,
+    ScoreBreakdownItem
 )
 from .base_evaluator import BaseStructuredEvaluator
 
 __all__ = [
-    'BaseEvaluationResult',
-    'BaseMetrics',
     'MarkdownFormattable',
     'FormattingOptions',
+    'StandardizedEvaluationResult',
+    'ScoreBreakdownItem',
     'BaseStructuredEvaluator'
 ]

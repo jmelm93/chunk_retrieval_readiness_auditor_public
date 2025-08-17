@@ -122,7 +122,9 @@ SCORING GUIDELINES:
 - 0-39: Poor CONTENT structure that significantly hinders chunk quality
 
 Remember: Evaluate the structure of the ACTUAL CONTENT, not the presence of standard web page elements.
-Focus on how the CONTENT structure affects AI chunk retrieval effectiveness."""
+Focus on how the CONTENT structure affects AI chunk retrieval effectiveness.
+
+Provide your analysis as structured data according to the provided schema."""
     
     return prompt
 

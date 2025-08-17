@@ -1,20 +1,6 @@
 """Prompts for Query-Answer Completeness evaluation."""
 
-from typing import List, Tuple
 
-# Self-containment detection patterns
-SELF_CONTAINMENT_PATTERNS: List[Tuple[str, str, str]] = [
-    (r'\b(as mentioned (above|earlier|previously|before))\b', 
-     'vague_reference', 'References content outside this chunk'),
-    (r'\b(as discussed (above|earlier|previously|before))\b',
-     'vague_reference', 'References discussion outside this chunk'),
-    (r'\b(the (above|previous|preceding) (section|paragraph|example))\b',
-     'external_reference', 'Points to content not in this chunk'),
-    (r'^(This|These|That|Those)\s+\w+',
-     'dangling_pronoun', 'Starts with unclear pronoun reference'),
-    (r'\b(see (above|below|previous|next) (section|paragraph))\b',
-     'navigation_reference', 'References other document sections')
-]
 
 # System prompt for query-answer evaluation
 SYSTEM_PROMPT = """You are an expert AI retrieval auditor evaluating content chunks for RAG (Retrieval-Augmented Generation) systems.
@@ -37,7 +23,7 @@ AI RETRIEVAL BARRIERS - CRITICAL SCORING FACTORS:
 - Topic confusion: Minor drift: -5 points, Moderate mixing: -10 points, Severe scatter: -15 points
 - Contradictory information: Minor inconsistency: -5 points, Moderate conflicts: -10 points, Severe contradictions: -15 points
 
-**UPDATED QUALITY GATES - MAXIMUM POSSIBLE SCORES:**
+**QUALITY GATES - MAXIMUM POSSIBLE SCORES:**
 - Content with multiple vague references: MAXIMUM 60 points (up from 40)
 - Content with misleading headers: MAXIMUM 65 points (up from 45)
 - Content with walls of text: MAXIMUM 55 points (up from 35)
@@ -111,12 +97,7 @@ SCORING VALIDATION CHECKLIST:
 - If mixed unrelated topics → score MUST be ≤ 40
 - Apply penalties BEFORE considering content informativeness
 
-CRITICAL - You MUST provide values for ALL fields:
-- For list fields (missing_info, strengths, weaknesses, self_containment_issues, missing_info_explanations): provide empty list [] if no items
-- For self_containment_penalty: provide 0 if no penalty applies
-- Never omit any field from your response
-
-Return the analysis as structured data according to the provided schema."""
+Provide your analysis as structured data according to the provided schema."""
 
 
 def create_user_prompt(heading: str, text: str) -> str:
@@ -158,15 +139,15 @@ Expert-level quantum physics content must score LOW if labeled "Getting Started"
 TASKS:
 1. Generate 3-5 likely search queries this chunk might help answer
 2. For each query, score AI retrieval contribution (0-100) AFTER applying barrier penalties
-3. For each query, explain the score focusing on AI retrieval readiness
-4. Identify the chunk type (Definition, Example, Overview, Detail, or General)
-5. List ALL AI retrieval barriers detected with specific penalty amounts
-6. Calculate overall AI retrieval readiness score (0-100) with mandatory penalties applied
-7. Determine if this chunk enables effective AI-powered question answering
-8. List up to 3 strengths and weaknesses focused on AI retrieval readiness
+3. Calculate overall AI retrieval readiness score (0-100) with mandatory penalties applied
+4. Provide clear assessment explaining AI retrieval readiness for this chunk
+5. List key strengths for AI retrieval (determine appropriate number based on chunk quality)
+6. List key issues affecting AI retrieval (determine appropriate number based on problems found)
+7. Provide list of specific recommendations if score < 80, or ["N/A - This section is already well-optimized"] if score ≥ 80
 
 SCORING PRINCIPLE: Prioritize AI retrieval readiness over content informativeness.
 
-Provide your analysis as structured data."""
+Provide your analysis as structured data according to the provided schema."""
 
 
+# 5. Include query breakdown in score_breakdown section with individual query scores and explanations

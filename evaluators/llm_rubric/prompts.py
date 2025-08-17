@@ -99,12 +99,7 @@ ACCESSIBILITY SCORING GATES:
 - Topic confusion/mixing → one_idea score MUST be ≤ 35
 - Misleading headers → accessibility compromised regardless of content quality
 
-CRITICAL - You MUST provide values for ALL fields:
-- For the flags field: provide empty list [] if no issues detected
-- For each ContentFlag in flags: severity must be "low", "medium", or "high"
-- Never omit any field from your response
-
-Return your evaluation as structured data according to the provided schema."""
+Provide your analysis as structured data according to the provided schema."""
 
 
 def create_user_prompt(heading: str, text: str, target_min: int, target_max: int) -> str:
@@ -147,20 +142,41 @@ Evaluate the following chunk for AI retrieval readiness. Target token window: {t
 Expert quantum physics content must score LOW if it has jargon barriers or vague references.
 
 # Tasks
-1. Score each rubric dimension (0-100) prioritizing AI accessibility over informativeness
-2. Provide brief justifications focused on AI retrieval readiness (1-2 sentences each)
-3. Identify AI accessibility barriers and content flags
-4. Suggest an improved heading that accurately reflects content level (3-8 words ideal)
-5. Rewrite the lead paragraph for AI clarity and self-containment (2-3 sentences)
-6. Provide 1-3 concrete recommendations for improving AI retrieval readiness
+1. Calculate overall AI retrieval readiness score (0-100) prioritizing accessibility over informativeness
+2. Provide clear assessment explaining the chunk's AI accessibility and quality
+3. List key strengths for AI retrieval (determine appropriate number based on chunk quality)
+4. List key issues affecting AI accessibility (determine appropriate number based on problems found)
+5. Provide list of specific recommendations if score < 80, or ["N/A - This section is already well-optimized"] if score ≥ 80
 
 CHUNK CONTEXT:
 - If heading promises "X Tips" but only introduces them, that's NORMAL for an overview chunk
 - Budget tier chunks don't need full breakdowns if they're tier overviews
 - Judge based on AI accessibility for the chunk's role, not as a standalone article
 
-Remember: Focus on AI retrieval barriers in actual content, ignore extraction artifacts like author bylines and social buttons."""
+Remember: Focus on AI retrieval barriers in actual content, ignore extraction artifacts like author bylines and social buttons.
 
+Provide your analysis as structured data according to the provided schema."""
+
+# 3. Score the 4 rubric dimensions in score_breakdown section:
+#    - Standalone Clarity: How well it reads without context
+#    - Topic Focus: Consistency and coherence of subject matter  
+#    - Structure Quality: Organization and flow
+#    - Content Size: Appropriateness for chunk retrieval
+
+
+#   "score_breakdown": {
+#     "Standalone Clarity": {"score": 88, "explanation": "Clear self-contained explanation with proper context"},
+#     "Topic Focus": {"score": 92, "explanation": "Focused exclusively on canonical tags without topic drift"},
+#     "Structure Quality": {"score": 85, "explanation": "Good logical flow, could benefit from better formatting"},
+#     "Content Size": {"score": 90, "explanation": "Appropriate scope and length for the topic"}
+#   },
+
+#   "score_breakdown": {
+#     "Standalone Clarity": {"score": 25, "explanation": "Severe vague reference issues break self-containment"},
+#     "Topic Focus": {"score": 30, "explanation": "Mixes unrelated topics (project management and quantum physics)"},
+#     "Structure Quality": {"score": 35, "explanation": "Poor organization with run-on sentences"},
+#     "Content Size": {"score": 40, "explanation": "Appropriate length but wrong scope for 'Getting Started'"}
+#   },
 
 def get_few_shot_examples(target_min: int, target_max: int) -> List[Dict[str, str]]:
     """Get few-shot examples for consistent evaluation.
@@ -185,22 +201,19 @@ def get_few_shot_examples(target_min: int, target_max: int) -> List[Dict[str, st
         },
         {
             "role": "assistant",
-            "content": """I'll evaluate this chunk for AI retrieval readiness.
-
-**AI Accessibility Assessment:**
-- No vague references detected
-- Clear, self-contained explanation
-- Technical terms are appropriately defined
-- Focused single topic (canonical tags)
-- Header accurately reflects content level
-
-**Scores:**
-- standalone: 88 (clear self-contained explanation)
-- one_idea: 92 (focused on canonical tags only)
-- structure: 85 (good flow, could use better formatting)
-- right_size: 90 (appropriate scope for topic)
-
-This chunk demonstrates good AI retrieval readiness with clear explanations and self-containment."""
+            "content": """{
+  "evaluator_name": "LLM Rubric Quality",
+  "overall_score": 89,
+  "overall_assessment": "Excellent chunk with strong AI retrieval readiness. Self-contained explanation with clear technical guidance and appropriate scope for canonical tag implementation.",
+  "strengths": [
+    "Self-contained with no external dependencies",
+    "Technical terms appropriately defined",
+    "Clear actionable guidance with code example"
+  ],
+  "issues": [],
+  "recommendations": ["N/A - This section is already well-optimized"],
+  "passing": true
+}"""
         },
         
         # Negative example - poor AI retrieval readiness
@@ -215,27 +228,20 @@ This chunk demonstrates good AI retrieval readiness with clear explanations and 
         },
         {
             "role": "assistant",
-            "content": """I'll evaluate this chunk for AI retrieval readiness.
-
-**AI Accessibility Barriers Detected:**
-- Multiple vague references: "previous chapter", "outlined earlier", "analysis presented above"
-- Misleading header: "Getting Started" but contains advanced quantum computing content
-- Stream of consciousness: mixes project management with quantum physics
-- Excessive undefined jargon: superposition, entanglement, cryptography optimization
-
-**Mandatory Penalties Applied:**
-- Vague references: Major standalone penalty
-- Misleading header: Content mismatch penalty  
-- Topic confusion: Focus penalty
-- Jargon barriers: Accessibility penalty
-
-**Scores:**
-- standalone: 25 (severe vague reference issues)
-- one_idea: 30 (mixes unrelated topics)
-- structure: 35 (poor organization, run-on sentence)
-- right_size: 40 (appropriate length but wrong scope)
-
-This chunk demonstrates major AI retrieval barriers that prevent effective use in RAG systems."""
+            "content": """{
+  "evaluator_name": "LLM Rubric Quality",
+  "overall_score": 32,
+  "overall_assessment": "Poor AI retrieval readiness with major accessibility barriers. Multiple vague references, misleading header, topic confusion, and excessive undefined jargon prevent effective use in RAG systems.",
+  "strengths": [],
+  "issues": [
+    "Multiple vague references to external content",
+    "Misleading header promises beginner content but delivers advanced topics",
+    "Stream of consciousness writing mixes unrelated domains",
+    "Excessive undefined technical jargon creates accessibility barriers"
+  ],
+  "recommendations": ["Rewrite to be self-contained", "Choose appropriate heading level", "Focus on single topic", "Define technical terms for target audience"],
+  "passing": false
+}"""
         }
     ]
 

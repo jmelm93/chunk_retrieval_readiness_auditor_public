@@ -86,7 +86,7 @@ SCORING GUIDELINES:
 - 40-59: Moderate issues - needs more specific entities for its purpose
 - 0-39: Poor entity focus - lacks entities needed for effective retrieval
 
-Provide entity extraction followed by thorough evaluation of entity quality and topical coherence."""
+Provide entity extraction followed by thorough evaluation as structured data according to the provided schema."""
     
     return prompt
 

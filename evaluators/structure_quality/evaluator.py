@@ -6,7 +6,7 @@ from loguru import logger
 from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator import BaseStructuredEvaluator
-from .models import StructureQualityResult
+from ..base.models import StandardizedEvaluationResult
 from .prompts import SYSTEM_PROMPT, create_evaluation_prompt
 
 
@@ -108,69 +108,22 @@ class StructureQualityEvaluator(BaseStructuredEvaluator):
         
         # Get structured evaluation from OpenAI
         result = await self.parse_structured_output(
-            response_model=StructureQualityResult,
+            response_model=StandardizedEvaluationResult,
             messages=messages
         )
         
         if not result:
             return self.create_empty_result("Failed to get evaluation from AI model")
         
-        # Calculate final score based on multiple factors
-        score_components = []
-        
-        # Overall structure score (35% weight)
-        score_components.append(result.overall_structure_score * 0.35)
-        
-        # Formatting effectiveness (25% weight)
-        score_components.append(result.formatting_effectiveness * 0.25)
-        
-        # Retrieval friendliness (25% weight)
-        score_components.append(result.retrieval_friendliness * 0.25)
-        
-        # Heading quality (15% weight)
-        avg_heading_score = (
-            result.heading_quality.clarity_score +
-            result.heading_quality.accuracy_score +
-            result.heading_quality.specificity_score
-        ) / 3
-        score_components.append(avg_heading_score * 0.15)
-        
-        # Penalty for high-impact issues
-        if result.structural_issues:
-            high_impact_count = sum(1 for issue in result.structural_issues if issue.impact == "high")
-            score_components.append(-5 * high_impact_count)
-        
-        # Bonus for good readability signals
-        readability_bonus = 0
-        if result.readability_signals.has_clear_intro:
-            readability_bonus += 3
-        if result.readability_signals.logical_flow:
-            readability_bonus += 3
-        if result.readability_signals.appropriate_formatting:
-            readability_bonus += 4
-        score_components.append(readability_bonus)
-        
-        final_score = max(0, min(100, sum(score_components)))
-        
-        # Update result with calculated score
-        result.score = int(final_score)
-        result.passing = final_score >= 60
-        
-        # Generate explanation based on score
-        if final_score >= 75:
-            result.explanation = f"Excellent structure with effective use of {len(result.structural_elements)} key elements enhancing retrieval quality"
-        elif final_score >= 60:
-            result.explanation = f"Good structural quality with {result.readability_signals.scanability_score}% scanability, minor improvements recommended"
-        else:
-            issue_count = len(result.structural_issues)
-            result.explanation = f"Structure needs improvement - {issue_count} issues affecting retrieval effectiveness"
+        # Update evaluator name and ensure passing threshold is correct
+        result.evaluator_name = self.evaluator_name
+        result.passing = result.overall_score >= 60
         
         # Create evaluation result
-        import json
         return EvaluationResult(
-            query=json.dumps(result.as_json_summary()),
+            query="",  # Not used in this context
             response="",
             passing=result.passing,
-            score=result.score / 100,  # Normalize to 0-1
+            score=result.overall_score / 100,  # Normalize to 0-1
             feedback=result.as_markdown()
         )
