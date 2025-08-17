@@ -7,6 +7,7 @@ from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator import BaseStructuredEvaluator
 from .models import LLMRubricResult, RubricScores, RubricJustifications, ContentFlag
+from .prompts import get_system_prompt, create_user_prompt, get_few_shot_examples
 
 
 class LLMRubricEvaluator(BaseStructuredEvaluator):
@@ -135,21 +136,6 @@ CHUNK CONTEXT:
 
 Remember: Focus on actual content quality, not extraction artifacts."""
     
-    def _get_few_shot_examples(self) -> List[Dict[str, str]]:
-        """Get few-shot examples for consistent evaluation."""
-        return [
-            {
-                "role": "user",
-                "content": self._create_user_prompt(
-                    "Creating Canonical Tags for Duplicate URLs",
-                    "A canonical tag tells search engines which URL is the master version when duplicates exist. Add `<link rel=\"canonical\" href=\"https://example.com/product\" />` to duplicate pages so signals consolidate to the preferred URL. Use canonicals when content is substantially similar; use `noindex` when a page should not appear in search at all."
-                )
-            },
-            {
-                "role": "assistant",
-                "content": "I'll evaluate this chunk for retrieval readiness."
-            }
-        ]
     
     async def aevaluate(self,
                         query: Optional[str] = None,
@@ -179,16 +165,16 @@ Remember: Focus on actual content quality, not extraction artifacts."""
         
         # Create messages with few-shot examples
         messages = [
-            {"role": "system", "content": self._get_system_prompt()}
+            {"role": "system", "content": get_system_prompt(self.target_min, self.target_max)}
         ]
         
         # Add few-shot examples for consistency
-        messages.extend(self._get_few_shot_examples())
+        messages.extend(get_few_shot_examples(self.target_min, self.target_max))
         
         # Add actual evaluation request
         messages.append({
             "role": "user",
-            "content": self._create_user_prompt(chunk_heading, chunk_text)
+            "content": create_user_prompt(chunk_heading, chunk_text, self.target_min, self.target_max)
         })
         
         # Get structured output from OpenAI

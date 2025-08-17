@@ -7,6 +7,7 @@ from llama_index.core.evaluation import EvaluationResult
 
 from ..base.base_evaluator import BaseStructuredEvaluator
 from .models import StructureQualityResult
+from .prompts import SYSTEM_PROMPT, create_evaluation_prompt
 
 
 class StructureQualityEvaluator(BaseStructuredEvaluator):
@@ -54,67 +55,6 @@ class StructureQualityEvaluator(BaseStructuredEvaluator):
         """Get the configuration key for model overrides."""
         return "structure_quality"
     
-    def _create_evaluation_prompt(self,
-                                   chunk_text: str,
-                                   chunk_heading: str,
-                                   html_content: Optional[str] = None) -> str:
-        """Create the evaluation prompt for structure quality assessment.
-        
-        Args:
-            chunk_text: Plain text version of the chunk
-            chunk_heading: The chunk's heading
-            html_content: Optional HTML/formatted version
-            
-        Returns:
-            Formatted prompt for evaluation
-        """
-        # Use HTML content if available, otherwise plain text
-        content_to_analyze = html_content if html_content else chunk_text
-        
-        prompt = f"""You are evaluating the structural quality of a content chunk for AI retrieval systems.
-
-CONTEXT:
-- This chunk will be retrieved by AI systems to answer user queries
-- Good structure aids both AI comprehension and information extraction
-- Structure should enhance, not hinder, the content's value
-- Consider this is web content that may have extraction artifacts
-
-CHUNK HEADING: {chunk_heading if chunk_heading else "No heading provided"}
-
-CHUNK CONTENT (may contain HTML/Markdown):
-{content_to_analyze}
-
-EVALUATION TASK:
-1. Assess the heading quality (clarity, accuracy, specificity)
-2. Evaluate structural elements (lists, tables, paragraphs, code blocks)
-3. Judge readability and scanability for AI systems
-4. Determine if formatting choices match content needs
-5. Identify structural issues that hinder chunk quality
-
-IMPORTANT CONSIDERATIONS:
-- Headings should be specific and descriptive, not generic
-- Lists and tables should be used when they enhance comprehension
-- Dense walls of text are problematic for retrieval
-- Clear introductory context improves chunk usability
-- Logical flow and organization matter for coherence
-- Inline artifacts (timestamps, share buttons) are NOT structural issues
-
-STRUCTURAL ELEMENT GUIDELINES:
-- Heading: Should accurately describe content (3-{self.max_heading_words} words ideal)
-- Lists: Effective for enumeration, steps, or multiple related items
-- Tables: Best for comparative or structured data
-- Paragraphs: Should be reasonably sized, not too long or too short
-- Code blocks: Should be properly formatted if present
-
-SCORING GUIDELINES:
-- 80-100: Excellent structure that enhances content value and retrieval
-- 60-79: Good structure with minor improvements needed
-- 40-59: Moderate structural issues affecting usability
-- 0-39: Poor structure that significantly hinders chunk quality
-
-Focus on how structure affects AI chunk retrieval effectiveness."""
-        
-        return prompt
     
     async def aevaluate(self,
                         query: Optional[str] = None,
@@ -146,23 +86,19 @@ Focus on how structure affects AI chunk retrieval effectiveness."""
         content_to_eval = self.truncate_content(content_to_eval, 3000)
         
         # Create evaluation prompt
-        prompt = self._create_evaluation_prompt(chunk_text, chunk_heading, html_content)
+        prompt = create_evaluation_prompt(
+            chunk_text, 
+            chunk_heading, 
+            html_content,
+            self.min_heading_words,
+            self.max_heading_words
+        )
         
         # Prepare messages for API call
         messages = [
             {
                 "role": "system",
-                "content": """You are an expert at evaluating content structure for AI retrieval systems.
-
-Your evaluation should:
-1. Assess heading quality and accuracy
-2. Evaluate structural element effectiveness
-3. Judge readability and scanability
-4. Identify structural issues and their impact
-5. Provide actionable improvement suggestions
-
-Be thorough but fair. Focus on structural aspects that affect AI chunk retrieval.
-Remember that perfect HTML/Markdown isn't required - focus on whether the structure aids or hinders comprehension."""
+                "content": SYSTEM_PROMPT
             },
             {
                 "role": "user",
