@@ -44,7 +44,14 @@ A. Analyze entity-related problems and create issues list:
    * Minor: Slight entity issues that don't impact understanding
    * Moderate: Entity problems that reduce clarity somewhat
    * Severe: Major entity issues that seriously impact coherence
-   Note: Be reasonable - not every chunk needs perfect entity coverage
+   
+   ENTITY FOCUS CALIBRATION:
+   - Excellent (85-100): Clear, specific entities aligned with topic, 0-1 minor issues
+   - Good (70-85): Good entity coverage, 1-2 minor gaps
+   - Medium (50-70): Some entity issues, mix of generic/specific
+   - Poor (30-50): Too generic or unfocused entities, multiple issues
+   - Very poor (10-30): Severe entity problems, no clear focus
+   Note: Technical content with proper nouns and specific terms should score high
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List entity-related strengths (good coverage, clear focus, specific entities, etc.)

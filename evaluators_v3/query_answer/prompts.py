@@ -38,7 +38,14 @@ A. Detect barriers and create issues list:
    - Write clear description
    - Include evidence excerpt (optional, max 100 chars)
    Order issues by severity (severe → moderate → minor)
-   Note: Be reasonable - not all imperfections are issues. Content can be good without being perfect
+   
+   CALIBRATION GUIDE:
+   - Excellent content (85-100): 0-1 minor issues max. Technical complexity ≠ confusion
+   - Good content (70-85): 1-2 minor issues, maybe 1 moderate
+   - Medium content (50-70): 2-3 issues total, mix of minor/moderate
+   - Poor content (30-50): Multiple moderate issues or 1+ severe
+   - Very poor (10-30): Multiple severe issues or many moderate issues
+   Note: Be appropriately strict with obviously weak content, lenient with strong content
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List key strengths of the chunk

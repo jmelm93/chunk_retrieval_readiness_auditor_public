@@ -34,7 +34,14 @@ A. Check each structural element and create issues list:
    - Write clear description of the structural problem
    - Include evidence excerpt showing the issue
    Order issues by severity (severe → moderate → minor)
-   Note: Be balanced in assessment - content can have good structure without being perfect
+   
+   STRUCTURAL QUALITY CALIBRATION:
+   - Excellent (85-100): Clear structure, appropriate formatting, 0-1 minor issues
+   - Good (70-85): Mostly well-structured, 1-2 minor formatting issues
+   - Medium (50-70): Some structural problems, 2-3 issues affecting readability
+   - Poor (30-50): Major structural issues like walls of text, poor flow
+   - Very poor (10-30): Severe structural chaos, unreadable formatting
+   Note: Well-formatted technical content should score high even if complex
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List structural strengths (clear headings, good formatting, logical flow, etc.)

@@ -38,7 +38,14 @@ A. Detect barriers and create issues list:
    * Minor: Small imperfections that don't affect understanding
    * Moderate: Noticeable issues but content remains useful
    * Severe: Major barriers that significantly impact retrieval
-   Note: Be balanced - content can be good without being perfect
+   
+   QUALITY CALIBRATION (be strict on poor content):
+   - Excellent (85-100): 0-1 minor issues only. Well-structured, self-contained
+   - Good (70-85): 1-2 minor issues, structure mostly clear
+   - Medium (50-70): 2-3 issues, some structure problems
+   - Poor (30-50): Multiple issues including wall_of_text, vague_refs, or confusion
+   - Very poor (10-30): Severe structural problems, multiple major barriers
+   Important: Don't overlook issues in obviously weak content. Be strict on walls of text
 
 STEP 2 - IDENTIFY STRENGTHS:
 B. List strengths related to AI accessibility (clear structure, self-contained, focused topic, etc.)

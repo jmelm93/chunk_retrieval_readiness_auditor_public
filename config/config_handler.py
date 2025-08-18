@@ -95,8 +95,8 @@ class FilteringConfig:
     strict_filtering: bool = False
     boilerplate_threshold: float = 0.5
     filter_mixed_chunks: bool = True
-    min_char_length: int = 150
-    min_word_count: int = 20
+    min_char_length: int = 200
+    min_word_count: int = 25
     min_sentence_count: int = 2
     # Code/Quote filtering thresholds
     code_threshold: float = 0.7        # Skip if >70% code content
